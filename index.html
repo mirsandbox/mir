@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#030712"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+<meta name="description" content="MIR — Collaborative Geopolitical Intelligence Sandbox v2.0"/>
+<title>MIR · SOVEREIGN GEOPOLITICAL SANDBOX v2.0</title>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FONT IMPORTS — Military Intelligence Aesthetic
+     Primary display: Orbitron (HUD numerics, headings)
+     Body copy:       Rajdhani (tactical readouts)
+     Monospace:       Share Tech Mono (data streams, terminals)
+     ═══════════════════════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   MIR v2.0 — GLOBAL STYLESHEET
+   Military HUD Theme · Phosphor Green on Deep Black · Tactical Data Display
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Design Token System ─────────────────────────────────────────────── */
+:root {
+  /* Core palette — phosphor CRT terminal aesthetic */
+  --void:         #000000;
+  --base:         #030712;
+  --base-2:       #050e1f;
+  --surface:      #080f21;
+  --surface-2:    #0a1428;
+  --panel:        #0c1930;
+  --panel-2:      #0f1e38;
+  --panel-3:      #122240;
+
+  /* Border hierarchy */
+  --border-deep:  #0d1f3c;
+  --border:       #152b4e;
+  --border-hi:    #1a3561;
+  --border-focus: #1e4080;
+
+  /* Signal colors — primary operational states */
+  --green:        #00ff88;       /* ACTIVE / OK / MINING */
+  --green-dim:    #00c96a;
+  --green-muted:  rgba(0,255,136,0.12);
+  --green-glow:   rgba(0,255,136,0.25);
+
+  --cyan:         #00d4ff;       /* INFORMATION / LINK */
+  --cyan-dim:     #0099cc;
+  --cyan-muted:   rgba(0,212,255,0.12);
+
+  --amber:        #ffaa00;       /* WARNING / MINING */
+  --amber-dim:    #cc8800;
+  --amber-muted:  rgba(255,170,0,0.12);
+  --amber-glow:   rgba(255,170,0,0.25);
+
+  --crimson:      #ff2244;       /* DANGER / BURN / ALERT */
+  --crimson-dim:  #cc1133;
+  --crimson-muted:rgba(255,34,68,0.12);
+
+  --violet:       #8855ff;       /* AI / AUTONOMOUS */
+  --violet-dim:   #6633cc;
+  --violet-muted: rgba(136,85,255,0.12);
+
+  --gold:         #ffd700;       /* SOVEREIGN / ADMIN */
+  --gold-dim:     #ccaa00;
+  --gold-muted:   rgba(255,215,0,0.12);
+  --gold-glow:    rgba(255,215,0,0.3);
+
+  /* Text hierarchy */
+  --txt-pri:      #e8f0fe;
+  --txt-sec:      #8fa8cc;
+  --txt-dim:      #3d5573;
+  --txt-ghost:    #1e3050;
+
+  /* Glow shadows */
+  --glow-green:   0 0 8px rgba(0,255,136,0.6), 0 0 24px rgba(0,255,136,0.2);
+  --glow-cyan:    0 0 8px rgba(0,212,255,0.6), 0 0 24px rgba(0,212,255,0.2);
+  --glow-amber:   0 0 8px rgba(255,170,0,0.6),  0 0 24px rgba(255,170,0,0.2);
+  --glow-crimson: 0 0 8px rgba(255,34,68,0.6),  0 0 24px rgba(255,34,68,0.2);
+  --glow-gold:    0 0 8px rgba(255,215,0,0.7),  0 0 30px rgba(255,215,0,0.25);
+  --glow-violet:  0 0 8px rgba(136,85,255,0.6), 0 0 24px rgba(136,85,255,0.2);
+
+  /* Gradients */
+  --grad-hud:     linear-gradient(180deg, rgba(0,255,136,0.06) 0%, transparent 100%);
+  --grad-scan:    linear-gradient(135deg, #0c1930 0%, #080f21 100%);
+  --grad-gold:    linear-gradient(135deg, #ffd700 0%, #ff8800 100%);
+  --grad-mining:  linear-gradient(90deg, #ffaa00 0%, #ff6600 50%, #ff2244 100%);
+
+  /* Typography */
+  --font-hud:     'Orbitron', monospace;
+  --font-body:    'Rajdhani', sans-serif;
+  --font-data:    'Share Tech Mono', monospace;
+
+  /* Layout */
+  --nav-h:        52px;
+  --ticker-h:     28px;
+  --sidebar-w:    268px;
+  --r:            6px;
+  --r-lg:         10px;
+  --r-xl:         16px;
+
+  /* Transitions */
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --dur:          0.2s;
+  --tr:           all var(--dur) var(--ease);
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  background: var(--base);
+  color: var(--txt-pri);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Subtle phosphor scanline overlay */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 255, 136, 0.012) 2px,
+      rgba(0, 255, 136, 0.012) 4px
+    );
+}
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+a { color: var(--cyan); text-decoration: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: var(--void); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+/* ── Ghost-Render Boot Screen ────────────────────────────────────────── */
+/* Shown instantly from IndexedDB cache BEFORE JS loads */
+#boot-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--void);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.5rem;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#boot-overlay.hidden {
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+.boot-logo {
+  font-family: var(--font-hud);
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: var(--green);
+  text-shadow: var(--glow-green);
+  animation: boot-pulse 1.2s ease-in-out infinite;
+}
+@keyframes boot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+.boot-sub {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: var(--txt-dim);
+}
+#boot-status {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  color: var(--green);
+  letter-spacing: 0.08em;
+  min-height: 1.2rem;
+}
+.boot-bar {
+  width: 280px; height: 2px;
+  background: var(--border-deep);
+  border-radius: 2px; overflow: hidden;
+}
+.boot-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s var(--ease);
+  box-shadow: var(--glow-green);
+}
+
+/* ── Sovereign Override Banner ───────────────────────────────────────── */
+#sovereign-banner {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 2000;
+  background: linear-gradient(90deg,
+    rgba(255,215,0,0.08) 0%,
+    rgba(255,215,0,0.18) 50%,
+    rgba(255,215,0,0.08) 100%
+  );
+  border-bottom: 1px solid var(--gold);
+  padding: 0.35rem 1rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  animation: banner-scan 3s linear infinite;
+}
+#sovereign-banner.active { display: flex; }
+@keyframes banner-scan {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+.banner-hex { font-size: 0.9rem; }
+
+/* ── Navigation Bar ──────────────────────────────────────────────────── */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: rgba(3,7,18,0.96);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  gap: 0.75rem;
+  z-index: 1000;
+}
+/* When banner is active, offset topbar */
+body.sovereign-active #topbar { top: 32px; }
+body.sovereign-active #sidebar,
+body.sovereign-active #main     { top: calc(var(--nav-h) + 32px); }
+
+/* Brand */
+#topbar-brand {
+  display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0;
+}
+.brand-hex {
+  width: 36px; height: 36px; flex-shrink: 0;
+  animation: hex-rotate 30s linear infinite;
+  filter: drop-shadow(0 0 6px var(--green));
+}
+@keyframes hex-rotate { to { transform: rotate(360deg); } }
+#brand-name {
+  font-family: var(--font-hud);
+  font-size: 0.68rem; font-weight: 900;
+  letter-spacing: 0.18em; color: var(--green);
+  text-shadow: var(--glow-green); line-height: 1.2;
+}
+#brand-ver {
+  font-family: var(--font-data);
+  font-size: 0.5rem; color: var(--txt-dim);
+  letter-spacing: 0.1em;
+}
+
+/* HUD status strip (centre) */
+#hud-strip {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  justify-content: center; gap: 1rem;
+  overflow: hidden;
+}
+.hud-stat {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.05rem;
+  flex-shrink: 0;
+}
+.hud-stat-val {
+  font-family: var(--font-hud);
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.06em; color: var(--green);
+  text-shadow: var(--glow-green);
+  line-height: 1;
+}
+.hud-stat-val.amber { color: var(--amber); text-shadow: var(--glow-amber); }
+.hud-stat-val.cyan  { color: var(--cyan);  text-shadow: var(--glow-cyan); }
+.hud-stat-val.gold  { color: var(--gold);  text-shadow: var(--glow-gold); }
+.hud-stat-lbl {
+  font-family: var(--font-data);
+  font-size: 0.44rem; color: var(--txt-dim);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.hud-divider {
+  width: 1px; height: 28px;
+  background: var(--border); flex-shrink: 0;
+}
+
+/* Nav right controls */
+#nav-right {
+  display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+}
+
+/* Sync dot */
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: var(--glow-green);
+  animation: dot-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.sync-dot.dirty  { background: var(--amber); box-shadow: var(--glow-amber); }
+.sync-dot.err    { background: var(--crimson); box-shadow: var(--glow-crimson); animation: none; }
+.sync-dot.ok     { background: var(--green); animation: none; }
+@keyframes dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Navbar buttons */
+.nbtn {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--txt-sec);
+  font-family: var(--font-data);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  padding: 0.28rem 0.6rem;
+  cursor: pointer;
+  transition: var(--tr);
+  white-space: nowrap;
+}
+.nbtn:hover {
+  background: var(--green-muted);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 8px rgba(0,255,136,0.15);
+}
+.nbtn.active {
+  background: var(--green-muted);
+  border-color: var(--green);
+  color: var(--green);
+}
+.nbtn.gold {
+  border-color: rgba(255,215,0,0.35);
+  color: var(--gold);
+}
+.nbtn.gold:hover {
+  background: var(--gold-muted);
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(255,215,0,0.2);
+}
+
+/* ── News Ticker ─────────────────────────────────────────────────────── */
+#ticker-bar {
+  position: fixed;
+  top: var(--nav-h); left: 0; right: 0;
+  height: var(--ticker-h);
+  background: rgba(3, 7, 18, 0.98);
+  border-bottom: 1px solid var(--border-deep);
+  display: flex; align-items: center;
+  z-index: 999; overflow: hidden;
+}
+#ticker-label {
+  font-family: var(--font-hud);
+  font-size: 0.48rem; font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--green); text-shadow: var(--glow-green);
+  padding: 0 0.8rem;
+  border-right: 1px solid var(--border);
+  white-space: nowrap; flex-shrink: 0;
+  height: 100%; display: flex; align-items: center;
+}
+#ticker-track {
+  flex: 1; overflow: hidden;
+  height: 100%; display: flex; align-items: center;
+}
+#ticker-content {
+  display: flex; gap: 3rem;
+  font-family: var(--font-data);
+  font-size: 0.6rem; color: var(--txt-sec);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  animation: ticker-scroll 60s linear infinite;
+  will-change: transform;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+.ticker-item { display: flex; align-items: center; gap: 0.4rem; }
+.ticker-sep  { color: var(--border-hi); }
+
+/* ── Layout Shell ────────────────────────────────────────────────────── */
+#sidebar {
+  position: fixed;
+  top: calc(var(--nav-h) + var(--ticker-h));
+  right: 0;
+  width: var(--sidebar-w);
+  height: calc(100vh - var(--nav-h) - var(--ticker-h));
+  background: rgba(5, 10, 22, 0.97);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 900; overflow-y: auto; overflow-x: hidden;
+  transition: transform 0.28s var(--ease);
+}
+#sidebar.collapsed { transform: translateX(100%); }
+
+#main {
+  margin-top: calc(var(--nav-h) + var(--ticker-h));
+  margin-right: var(--sidebar-w);
+  min-height: calc(100vh - var(--nav-h) - var(--ticker-h));
+  position: relative; z-index: 1;
+  padding: 1.2rem;
+  transition: margin-right 0.28s var(--ease);
+}
+#main.full { margin-right: 0; }
+
+/* ── Views ───────────────────────────────────────────────────────────── */
+.view { display: none; animation: vfade 0.2s ease; }
+.view.active { display: block; }
+@keyframes vfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Sidebar Components ──────────────────────────────────────────────── */
+.sb-section {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid rgba(21,43,78,0.5);
+}
+.sb-heading {
+  font-family: var(--font-hud);
+  font-size: 0.44rem; font-weight: 700;
+  letter-spacing: 0.2em; color: var(--txt-ghost);
+  text-transform: uppercase; margin-bottom: 0.5rem;
+}
+.sb-nav-item {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.38rem 0.5rem;
+  border-radius: var(--r);
+  cursor: pointer; transition: var(--tr);
+  margin-bottom: 0.08rem;
+  border: 1px solid transparent;
+}
+.sb-nav-item:hover { background: rgba(255,255,255,0.03); }
+.sb-nav-item.active {
+  background: rgba(0,255,136,0.06);
+  border-color: rgba(0,255,136,0.2);
+}
+.sb-nav-icon {
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; flex-shrink: 0;
+  opacity: 0.6;
+}
+.sb-nav-item.active .sb-nav-icon { opacity: 1; }
+.sb-nav-label {
+  font-size: 0.75rem; font-weight: 500;
+  color: var(--txt-sec); flex: 1;
+}
+.sb-nav-item.active .sb-nav-label { color: var(--green); }
+.sb-nav-badge {
+  font-family: var(--font-data);
+  font-size: 0.48rem; font-weight: 700;
+  padding: 0.06rem 0.3rem; border-radius: 3px;
+  background: var(--green-muted); color: var(--green);
+  letter-spacing: 0.06em;
+}
+.sb-nav-badge.amber { background: var(--amber-muted); color: var(--amber); }
+.sb-nav-badge.crimson { background: var(--crimson-muted); color: var(--crimson); }
+.sb-nav-badge.violet { background: var(--violet-muted); color: var(--violet); }
+
+/* Sidebar metrics */
+.sb-metric {
+  display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 0.32rem;
+}
+.sb-metric-lbl { font-size: 0.67rem; color: var(--txt-dim); }
+.sb-metric-val {
+  font-family: var(--font-data);
+  font-size: 0.67rem; color: var(--green); letter-spacing: 0.04em;
+}
+.sb-metric-val.amber { color: var(--amber); }
+.sb-metric-val.cyan  { color: var(--cyan); }
+.sb-metric-val.gold  { color: var(--gold); }
+.sb-metric-val.crimson { color: var(--crimson); }
+
+.sb-mini-bar {
+  height: 2px; background: var(--border-deep);
+  border-radius: 2px; margin-bottom: 0.5rem; overflow: hidden;
+}
+.sb-mini-fill {
+  height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: 2px; transition: width 0.6s var(--ease);
+}
+.sb-mini-fill.amber { background: linear-gradient(90deg, var(--amber), #ff6600); }
+.sb-mini-fill.gold  { background: var(--grad-gold); }
+
+/* ── PoUW Mining HUD ─────────────────────────────────────────────────── */
+#mining-hud {
+  background: linear-gradient(135deg,
+    rgba(255,170,0,0.06) 0%,
+    rgba(255,102,0,0.04) 100%
+  );
+  border: 1px solid rgba(255,170,0,0.2);
+  border-radius: var(--r-lg);
+  padding: 0.7rem 0.9rem;
+  margin: 0.5rem 0;
+}
+#mining-hud-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.mining-title {
+  font-family: var(--font-hud);
+  font-size: 0.5rem; font-weight: 700;
+  letter-spacing: 0.15em; color: var(--amber);
+  text-shadow: var(--glow-amber);
+}
+.mining-epoch-badge {
+  font-family: var(--font-data);
+  font-size: 0.48rem; color: var(--amber-dim);
+  border: 1px solid rgba(255,170,0,0.25);
+  border-radius: 3px; padding: 0.06rem 0.3rem;
+}
+.mining-bar {
+  height: 4px; background: var(--border-deep);
+  border-radius: 2px; overflow: hidden; margin-bottom: 0.35rem;
+}
+.mining-bar-fill {
+  height: 100%;
+  background: var(--grad-mining);
+  border-radius: 2px;
+  transition: width 0.8s var(--ease);
+  box-shadow: 0 0 6px rgba(255,170,0,0.4);
+}
+.mining-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+}
+.mining-stat-lbl { font-size: 0.56rem; color: var(--txt-dim); }
+.mining-stat-val {
+  font-family: var(--font-data);
+  font-size: 0.6rem; color: var(--amber); text-align: right;
+}
+
+/* ── Card Components ─────────────────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem;
+  margin-bottom: 0.8rem;
+  position: relative; overflow: hidden;
+  transition: var(--tr);
+}
+.card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green-muted), transparent);
+  opacity: 0; transition: opacity 0.25s;
+}
+.card:hover::after { opacity: 1; }
+
+.card-hd {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.8rem; gap: 0.5rem;
+}
+.card-title {
+  font-family: var(--font-hud);
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--txt-pri);
+}
+.card-sub { font-size: 0.65rem; color: var(--txt-dim); margin-top: 0.1rem; }
+
+/* Tactical badges */
+.tbadge {
+  font-family: var(--font-data);
+  font-size: 0.48rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.14rem 0.42rem; border-radius: 3px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.tbadge-g  { background: var(--green-muted);   color: var(--green);   border: 1px solid rgba(0,255,136,0.2); }
+.tbadge-c  { background: var(--cyan-muted);     color: var(--cyan);    border: 1px solid rgba(0,212,255,0.2); }
+.tbadge-a  { background: var(--amber-muted);    color: var(--amber);   border: 1px solid rgba(255,170,0,0.2); }
+.tbadge-r  { background: var(--crimson-muted);  color: var(--crimson); border: 1px solid rgba(255,34,68,0.2); }
+.tbadge-v  { background: var(--violet-muted);   color: var(--violet);  border: 1px solid rgba(136,85,255,0.2); }
+.tbadge-gd { background: var(--gold-muted);     color: var(--gold);    border: 1px solid rgba(255,215,0,0.2); }
+
+/* ── Metric Dashboard Grid ───────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem; margin-bottom: 0.8rem;
+}
+.mcard {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 0.8rem 0.9rem;
+  position: relative; overflow: hidden;
+  transition: var(--tr);
+}
+.mcard::before {
+  content: ''; position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1.5px;
+  opacity: 0.7;
+}
+.mcard-g::before { background: var(--green); }
+.mcard-c::before { background: var(--cyan); }
+.mcard-a::before { background: var(--amber); }
+.mcard-r::before { background: var(--crimson); }
+.mcard-v::before { background: var(--violet); }
+.mcard-gd::before{ background: var(--gold); }
+
+.mcard:hover { border-color: var(--border-hi); transform: translateY(-1px); }
+.mcard-lbl { font-size: 0.62rem; color: var(--txt-dim); margin-bottom: 0.3rem; font-weight: 500; }
+.mcard-val {
+  font-family: var(--font-hud);
+  font-size: 1.4rem; font-weight: 900;
+  letter-spacing: 0.04em; line-height: 1;
+}
+.mcard-g  .mcard-val { color: var(--green);   text-shadow: var(--glow-green); }
+.mcard-c  .mcard-val { color: var(--cyan);    text-shadow: var(--glow-cyan); }
+.mcard-a  .mcard-val { color: var(--amber);   text-shadow: var(--glow-amber); }
+.mcard-r  .mcard-val { color: var(--crimson); text-shadow: var(--glow-crimson); }
+.mcard-v  .mcard-val { color: var(--violet);  text-shadow: var(--glow-violet); }
+.mcard-gd .mcard-val { color: var(--gold);    text-shadow: var(--glow-gold); }
+.mcard-delta {
+  font-family: var(--font-data);
+  font-size: 0.55rem; color: var(--txt-dim);
+  margin-top: 0.25rem; letter-spacing: 0.04em;
+}
+.mcard-delta.up   { color: var(--green); }
+.mcard-delta.down { color: var(--crimson); }
+
+/* ── Progress Bars ───────────────────────────────────────────────────── */
+.pbar {
+  height: 4px; background: var(--border-deep);
+  border-radius: 2px; overflow: hidden;
+}
+.pbar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width 0.5s var(--ease);
+}
+.pbar-fill.g  { background: linear-gradient(90deg, var(--green-dim), var(--green)); }
+.pbar-fill.c  { background: linear-gradient(90deg, var(--cyan-dim), var(--cyan)); }
+.pbar-fill.a  { background: var(--grad-mining); }
+.pbar-fill.v  { background: linear-gradient(90deg, var(--violet-dim), var(--violet)); }
+.pbar-fill.gd { background: var(--grad-gold); }
+
+/* ── Input Fields ────────────────────────────────────────────────────── */
+.ifield {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--txt-pri);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  padding: 0.52rem 0.7rem;
+  transition: var(--tr); outline: none;
+}
+.ifield:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(0,255,136,0.1);
+}
+.ifield::placeholder { color: var(--txt-ghost); }
+.ifield.mono {
+  font-family: var(--font-data);
+  font-size: 0.72rem; letter-spacing: 0.03em;
+}
+textarea.ifield { resize: vertical; min-height: 72px; line-height: 1.5; }
+select.ifield   { cursor: pointer; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.35rem; font-family: var(--font-body); font-size: 0.76rem;
+  font-weight: 600; padding: 0.48rem 0.95rem;
+  border-radius: var(--r); border: none;
+  cursor: pointer; transition: var(--tr); white-space: nowrap;
+  position: relative; overflow: hidden;
+}
+.btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.12s;
+}
+.btn:hover::after { background: rgba(255,255,255,0.05); }
+.btn:active::after { background: rgba(0,0,0,0.1); }
+
+.btn-g {
+  background: var(--green-muted);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: var(--green);
+}
+.btn-g:hover { box-shadow: 0 0 12px rgba(0,255,136,0.25); }
+
+.btn-c {
+  background: var(--cyan-muted);
+  border: 1px solid rgba(0,212,255,0.3);
+  color: var(--cyan);
+}
+.btn-c:hover { box-shadow: 0 0 12px rgba(0,212,255,0.25); }
+
+.btn-ghost {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--txt-sec);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.06); border-color: var(--border-hi); }
+
+.btn-r {
+  background: var(--crimson-muted);
+  border: 1px solid rgba(255,34,68,0.3);
+  color: var(--crimson);
+}
+.btn-r:hover { box-shadow: 0 0 12px rgba(255,34,68,0.25); }
+
+.btn-gold {
+  background: var(--gold-muted);
+  border: 1px solid rgba(255,215,0,0.35);
+  color: var(--gold);
+}
+.btn-gold:hover { box-shadow: var(--glow-gold); }
+
+.btn-mining {
+  background: linear-gradient(135deg, rgba(255,170,0,0.15), rgba(255,102,0,0.1));
+  border: 1px solid rgba(255,170,0,0.4);
+  color: var(--amber);
+  font-family: var(--font-hud);
+  font-size: 0.6rem; letter-spacing: 0.1em;
+}
+.btn-mining:hover { box-shadow: var(--glow-amber); }
+.btn-mining.active {
+  background: linear-gradient(135deg, rgba(255,170,0,0.25), rgba(255,102,0,0.18));
+  box-shadow: var(--glow-amber);
+  animation: mine-pulse 1.5s ease-in-out infinite;
+}
+@keyframes mine-pulse {
+  0%, 100% { box-shadow: var(--glow-amber); }
+  50%       { box-shadow: 0 0 20px rgba(255,170,0,0.5), 0 0 40px rgba(255,170,0,0.2); }
+}
+
+.btn-sm { font-size: 0.68rem; padding: 0.32rem 0.65rem; }
+
+/* ── Terminal (Admin) ────────────────────────────────────────────────── */
+#admin-terminal {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 0;
+  background: rgba(2, 5, 12, 0.98);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-hi);
+  overflow: hidden;
+  z-index: 1500;
+  transition: height 0.3s var(--ease);
+  display: flex; flex-direction: column;
+}
+#admin-terminal.open { height: 340px; }
+
+#terminal-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+#terminal-title {
+  font-family: var(--font-hud);
+  font-size: 0.5rem; font-weight: 700;
+  letter-spacing: 0.2em; color: var(--gold);
+  text-shadow: var(--glow-gold);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+#terminal-log {
+  flex: 1; overflow-y: auto; padding: 0.4rem 0.9rem;
+  font-family: var(--font-data); font-size: 0.62rem;
+  line-height: 1.6;
+}
+.tlog-line {
+  display: flex; gap: 0.6rem; align-items: baseline;
+  animation: tline-in 0.1s ease;
+}
+@keyframes tline-in {
+  from { opacity: 0; transform: translateX(-2px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.tlog-ts { color: var(--txt-ghost); flex-shrink: 0; font-size: 0.55rem; }
+.tlog-msg { color: var(--txt-sec); word-break: break-word; }
+.tlog-ok   { color: var(--green); }
+.tlog-err  { color: var(--crimson); }
+.tlog-warn { color: var(--amber); }
+.tlog-gold { color: var(--gold); }
+.tlog-info { color: var(--cyan); }
+
+#terminal-input-row {
+  display: flex; align-items: center; gap: 0; flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.5);
+}
+#terminal-prompt {
+  font-family: var(--font-data); font-size: 0.7rem;
+  color: var(--gold); padding: 0 0.7rem;
+  flex-shrink: 0;
+}
+#terminal-cmd {
+  flex: 1; background: transparent; border: none;
+  color: var(--green); font-family: var(--font-data);
+  font-size: 0.7rem; padding: 0.45rem 0;
+  outline: none; caret-color: var(--green);
+}
+#terminal-db-size {
+  font-family: var(--font-data);
+  font-size: 0.55rem; color: var(--txt-dim);
+  padding: 0 0.7rem; flex-shrink: 0;
+}
+
+/* ── Flash Alert Overlay ─────────────────────────────────────────────── */
+#flash-overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(255,34,68,0.06);
+  border: 2px solid var(--crimson);
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+#flash-overlay.active { opacity: 1; visibility: visible; }
+#flash-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(3,7,18,0.96);
+  border: 1px solid var(--crimson);
+  border-radius: var(--r-lg);
+  padding: 1.2rem 2rem;
+  z-index: 3001;
+  text-align: center;
+  max-width: 480px; width: 92%;
+  display: none;
+  box-shadow: 0 0 40px rgba(255,34,68,0.3);
+}
+#flash-banner.active { display: block; }
+#flash-title {
+  font-family: var(--font-hud);
+  font-size: 0.72rem; font-weight: 900;
+  letter-spacing: 0.2em; color: var(--crimson);
+  text-shadow: var(--glow-crimson); margin-bottom: 0.6rem;
+}
+#flash-msg {
+  font-size: 0.82rem; color: var(--txt-sec); line-height: 1.5;
+  margin-bottom: 0.8rem;
+}
+#flash-cooldown {
+  font-family: var(--font-hud);
+  font-size: 0.62rem; color: var(--amber);
+  letter-spacing: 0.1em;
+}
+
+/* ── Toast Notifications ─────────────────────────────────────────────── */
+#toast-container {
+  position: fixed;
+  bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+  z-index: 9500; display: flex;
+  flex-direction: column-reverse; gap: 0.4rem;
+  pointer-events: none; min-width: 180px; max-width: 360px;
+}
+.toast {
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--r);
+  font-size: 0.75rem; font-weight: 600;
+  border: 1px solid transparent;
+  backdrop-filter: blur(16px);
+  text-align: center;
+  animation: toast-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.toast.success { background: var(--green-muted);   border-color: rgba(0,255,136,0.3);  color: var(--green); }
+.toast.error   { background: var(--crimson-muted);  border-color: rgba(255,34,68,0.3);  color: var(--crimson); }
+.toast.info    { background: var(--cyan-muted);     border-color: rgba(0,212,255,0.3);  color: var(--cyan); }
+.toast.warning { background: var(--amber-muted);    border-color: rgba(255,170,0,0.3);  color: var(--amber); }
+
+/* ── Modals ──────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 4000; display: none;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--panel-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-xl);
+  padding: 1.3rem;
+  max-width: 500px; width: 94%;
+  position: relative; max-height: 88vh; overflow-y: auto;
+  animation: modal-in 0.18s ease;
+  box-shadow: 0 0 50px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,255,136,0.08);
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-title {
+  font-family: var(--font-hud);
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.12em; color: var(--green);
+  margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.45rem;
+}
+.modal-close {
+  position: absolute; top: 0.8rem; left: 0.8rem;
+  background: transparent; border: none;
+  color: var(--txt-dim); cursor: pointer;
+  font-size: 0.9rem; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--crimson); }
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tab-row {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.8rem; overflow-x: auto;
+}
+.tab-btn {
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--txt-dim);
+  font-family: var(--font-body); font-size: 0.76rem; font-weight: 600;
+  padding: 0.45rem 0.8rem; cursor: pointer; transition: var(--tr);
+  white-space: nowrap; margin-bottom: -1px;
+  letter-spacing: 0.02em;
+}
+.tab-btn:hover { color: var(--txt-sec); }
+.tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: vfade 0.18s ease; }
+
+/* ── Form Utilities ──────────────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.65rem; }
+.form-label { font-size: 0.7rem; font-weight: 600; color: var(--txt-sec); }
+
+/* ── Flex / Layout Utilities ─────────────────────────────────────────── */
+.fx  { display: flex; }
+.fc  { flex-direction: column; }
+.ac  { align-items: center; }
+.jb  { justify-content: space-between; }
+.jc  { justify-content: center; }
+.fw  { flex-wrap: wrap; }
+.f1  { flex: 1; min-width: 0; }
+.gap1{ gap: 0.45rem; }
+.gap2{ gap: 0.8rem; }
+.mt1 { margin-top: 0.45rem; }
+.mt2 { margin-top: 0.8rem; }
+.mb1 { margin-bottom: 0.45rem; }
+.mb2 { margin-bottom: 0.8rem; }
+.w100{ width: 100%; }
+
+/* ── Text Utilities ──────────────────────────────────────────────────── */
+.ts  { font-size: 0.76rem; }
+.txs { font-size: 0.66rem; }
+.tdim{ color: var(--txt-dim); }
+.tsec{ color: var(--txt-sec); }
+.tg  { color: var(--green); }
+.tc  { color: var(--cyan); }
+.ta  { color: var(--amber); }
+.tr  { color: var(--crimson); }
+.tv  { color: var(--violet); }
+.tgd { color: var(--gold); }
+.mono{ font-family: var(--font-data); letter-spacing: 0.03em; }
+.hud { font-family: var(--font-hud); }
+.ltr { direction: ltr; }
+.rtl { direction: rtl; }
+.hidden { display: none !important; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 0.6rem 0; }
+
+/* ── Agent Cards ─────────────────────────────────────────────────────── */
+.agent-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 0.9rem;
+  transition: var(--tr);
+}
+.agent-card:hover { border-color: var(--border-hi); }
+.agent-card.speaking {
+  border-color: rgba(136,85,255,0.4);
+  background: linear-gradient(135deg, var(--panel) 0%, rgba(136,85,255,0.05) 100%);
+  box-shadow: 0 0 16px rgba(136,85,255,0.1);
+}
+
+/* ── Feed Item ───────────────────────────────────────────────────────── */
+.feed-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 0.85rem;
+  margin-bottom: 0.6rem;
+  transition: var(--tr);
+  position: relative;
+}
+.feed-item:hover { border-color: var(--border-hi); }
+.feed-item.agent-authored {
+  border-right: 2px solid var(--violet);
+}
+
+/* ── Scenario Slider ─────────────────────────────────────────────────── */
+.scenario-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 3px;
+  background: var(--border-deep);
+  border-radius: 2px; outline: none;
+  cursor: pointer;
+}
+.scenario-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: var(--glow-green);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.scenario-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* ── OTC Table ───────────────────────────────────────────────────────── */
+.otc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.5rem; align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-deep);
+  font-size: 0.75rem;
+}
+.otc-row:last-child { border-bottom: none; }
+
+/* ── Leaderboard ─────────────────────────────────────────────────────── */
+.lb-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--border-deep);
+}
+.lb-rank {
+  font-family: var(--font-hud); font-size: 0.62rem; font-weight: 700;
+  color: var(--txt-dim); width: 24px; text-align: center; flex-shrink: 0;
+}
+.lb-rank.gold   { color: var(--gold); text-shadow: var(--glow-gold); }
+.lb-rank.silver { color: #c0c0c0; }
+.lb-rank.bronze { color: #cd7f32; }
+
+/* ── PoUW Challenge Overlay ──────────────────────────────────────────── */
+#pouw-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,0.97);
+  backdrop-filter: blur(24px);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 1.2rem;
+  animation: pouw-in 0.4s ease;
+}
+#pouw-overlay.hidden { display: none; }
+@keyframes pouw-in { from { opacity: 0; } to { opacity: 1; } }
+
+.pouw-box {
+  background: var(--panel-2);
+  border: 1px solid rgba(255,170,0,0.3);
+  border-radius: var(--r-xl);
+  padding: 1.8rem 2.2rem;
+  max-width: 420px; width: 92%;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1rem; text-align: center;
+  box-shadow: 0 0 50px rgba(255,170,0,0.12), 0 0 100px rgba(255,102,0,0.06);
+  position: relative; overflow: hidden;
+}
+.pouw-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--grad-mining);
+}
+.pouw-hex { font-size: 2.2rem; animation: pouw-spin 4s linear infinite; }
+@keyframes pouw-spin { to { transform: rotate(360deg); } }
+.pouw-title {
+  font-family: var(--font-hud); font-size: 0.78rem; font-weight: 900;
+  letter-spacing: 0.15em; color: var(--amber);
+}
+.pouw-desc { font-size: 0.76rem; color: var(--txt-sec); line-height: 1.6; }
+.pouw-hash {
+  font-family: var(--font-data); font-size: 0.58rem;
+  color: var(--violet); word-break: break-all;
+  background: var(--surface); border-radius: var(--r);
+  padding: 0.4rem 0.6rem; width: 100%; min-height: 2rem;
+  letter-spacing: 0.04em;
+}
+.pouw-epoch {
+  font-family: var(--font-hud); font-size: 0.55rem;
+  color: var(--txt-dim); letter-spacing: 0.12em;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar { transform: translateX(100%); width: 260px; }
+  #sidebar.mobile-open { transform: translateX(0); width: 260px; }
+  #main { margin-right: 0; }
+  .dash-grid { grid-template-columns: 1fr 1fr; }
+  #hud-strip { display: none; }
+  .hud-divider { display: none; }
+}
+@media (max-width: 480px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  #topbar { padding: 0 0.6rem; }
+  #main { padding: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     GHOST-RENDER BOOT SCREEN
+     Displayed from IndexedDB cache instantly — BEFORE JavaScript loads.
+     The JS init() will populate this, then fade it out once the app is ready.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="boot-overlay">
+  <div class="boot-logo">MIR</div>
+  <div class="boot-sub">SOVEREIGN GEOPOLITICAL INTELLIGENCE SANDBOX</div>
+  <div class="boot-bar"><div class="boot-bar-fill" id="boot-fill"></div></div>
+  <div id="boot-status">Initialising Sovereign Cache...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SOVEREIGN OVERRIDE BANNER
+     Shown when Admin has issued an executive override
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="sovereign-banner">
+  <span class="banner-hex">⬡</span>
+  <span>SOVEREIGN EXECUTIVE ORDER ACTIVE</span>
+  <span class="banner-hex">⬡</span>
+  <span id="sovereign-banner-field"></span>
+  <span class="banner-hex">⬡</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     TOP NAVIGATION BAR
+     ═══════════════════════════════════════════════════════════════════════ -->
+<nav id="topbar">
+  <!-- Brand -->
+  <div id="topbar-brand">
+    <svg class="brand-hex" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="20,2 37,11 37,29 20,38 3,29 3,11" fill="none" stroke="#00ff88" stroke-width="1.4"/>
+      <polygon points="20,8 31,14.5 31,25.5 20,32 9,25.5 9,14.5" fill="none" stroke="#00ff88" stroke-width="0.8" opacity="0.4"/>
+      <circle cx="20" cy="20" r="4" fill="#00ff88" opacity="0.9"/>
+      <line x1="20" y1="2"  x2="20" y2="8"  stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+      <line x1="20" y1="32" x2="20" y2="38" stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+      <line x1="3"  y1="11" x2="9"  y2="14.5" stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+      <line x1="31" y1="25.5" x2="37" y2="29" stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+      <line x1="37" y1="11" x2="31" y2="14.5" stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+      <line x1="3"  y1="29" x2="9"  y2="25.5" stroke="#00ff88" stroke-width="1" opacity="0.5"/>
+    </svg>
+    <div>
+      <div id="brand-name">MIR · SOVEREIGN SANDBOX</div>
+      <div id="brand-ver">v2.0.0 · PoUW-33Y · ED25519</div>
+    </div>
+  </div>
+
+  <!-- HUD status strip -->
+  <div id="hud-strip">
+    <div class="hud-stat">
+      <div class="hud-stat-val" id="hud-supply">—</div>
+      <div class="hud-stat-lbl">CIRCULATING MIR</div>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat">
+      <div class="hud-stat-val amber" id="hud-burned">—</div>
+      <div class="hud-stat-lbl">TOTAL BURNED</div>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat">
+      <div class="hud-stat-val cyan" id="hud-pool">—</div>
+      <div class="hud-stat-lbl">REWARD POOL</div>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat">
+      <div class="hud-stat-val gold" id="hud-epoch">EPOCH 1</div>
+      <div class="hud-stat-lbl">MINING EPOCH</div>
+    </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat">
+      <div class="hud-stat-val" id="hud-hashrate">—</div>
+      <div class="hud-stat-lbl">H/s RATE</div>
+    </div>
+  </div>
+
+  <!-- Right controls -->
+  <div id="nav-right">
+    <span class="sync-dot" id="sync-dot" title="Database sync status"></span>
+    <span id="nav-balance" class="mono txs tg" style="padding:0 0.3rem">— MIR</span>
+    <button class="nbtn" id="auth-btn" onclick="openAuthModal()">CONNECT</button>
+    <button class="nbtn" onclick="toggleMining()" id="mine-toggle">⬡ MINE</button>
+    <button class="nbtn gold" onclick="toggleAdminTerminal()" title="Ctrl+Shift+A">⬡ SOVEREIGN</button>
+    <button class="nbtn" onclick="toggleSidebar()" id="sb-toggle">◧</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     OSINT NEWS TICKER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="ticker-bar">
+  <div id="ticker-label">OSINT FEED</div>
+  <div id="ticker-track">
+    <div id="ticker-content">
+      <span class="ticker-item">
+        <span class="tg">●</span>
+        Initialising OSINT feed parser...
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+  <!-- System status -->
+  <div class="sb-section">
+    <div class="sb-heading">System Status</div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Network</span>
+      <span class="sb-metric-val" id="sb-net">ONLINE</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">DB Size</span>
+      <span class="sb-metric-val cyan" id="sb-dbsize">— KB</span>
+    </div>
+    <div class="sb-mini-bar">
+      <div class="sb-mini-fill" id="sb-dbsize-fill" style="width:2%"></div>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Accounts</span>
+      <span class="sb-metric-val" id="sb-accounts">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Shadowbanned</span>
+      <span class="sb-metric-val crimson" id="sb-banned">—</span>
+    </div>
+  </div>
+
+  <!-- PoUW Mining status -->
+  <div class="sb-section">
+    <div id="mining-hud">
+      <div id="mining-hud-header">
+        <span class="mining-title">⬡ PoUW MINING</span>
+        <span class="mining-epoch-badge" id="sb-epoch-badge">EPOCH 1/11</span>
+      </div>
+      <div class="mining-bar">
+        <div class="mining-bar-fill" id="sb-epoch-fill" style="width:0%"></div>
+      </div>
+      <div class="mining-stats">
+        <span class="mining-stat-lbl">Block Reward</span>
+        <span class="mining-stat-val" id="sb-block-reward">—</span>
+        <span class="mining-stat-lbl">Next Halving</span>
+        <span class="mining-stat-val" id="sb-halving">—</span>
+        <span class="mining-stat-lbl">Mined (session)</span>
+        <span class="mining-stat-val" id="sb-mined-session">0 MIR</span>
+        <span class="mining-stat-lbl">Hash Rate</span>
+        <span class="mining-stat-val" id="sb-hashrate">0 H/s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="sb-section">
+    <div class="sb-heading">Navigation</div>
+    <div class="sb-nav-item active" id="nav-item-feed"        onclick="setView('feed')">
+      <span class="sb-nav-icon">◈</span>
+      <span class="sb-nav-label">Intelligence Feed</span>
+      <span class="sb-nav-badge" id="nb-feed">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-scenarios"          onclick="setView('scenarios')">
+      <span class="sb-nav-icon">⬡</span>
+      <span class="sb-nav-label">Scenarios</span>
+      <span class="sb-nav-badge" id="nb-scenarios">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-predictions"        onclick="setView('predictions')">
+      <span class="sb-nav-icon">◆</span>
+      <span class="sb-nav-label">Prediction Markets</span>
+      <span class="sb-nav-badge amber" id="nb-predictions">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-agents"             onclick="setView('agents')">
+      <span class="sb-nav-icon">◎</span>
+      <span class="sb-nav-label">AI Agents</span>
+      <span class="sb-nav-badge violet" id="nb-agents">3</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-cognitive"          onclick="setView('cognitive')">
+      <span class="sb-nav-icon">⊕</span>
+      <span class="sb-nav-label">Cognitive Engine</span>
+      <span class="sb-nav-badge violet" id="nb-cognitive">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-mining"             onclick="setView('mining')">
+      <span class="sb-nav-icon">⬡</span>
+      <span class="sb-nav-label">Mining Dashboard</span>
+      <span class="sb-nav-badge amber" id="nb-mining">PoUW</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-market"             onclick="setView('market')">
+      <span class="sb-nav-icon">▲</span>
+      <span class="sb-nav-label">OTC Market</span>
+      <span class="sb-nav-badge" id="nb-market">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-ledger"             onclick="setView('ledger')">
+      <span class="sb-nav-icon">≡</span>
+      <span class="sb-nav-label">TX Ledger</span>
+      <span class="sb-nav-badge" id="nb-ledger">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-leaderboard"        onclick="setView('leaderboard')">
+      <span class="sb-nav-icon">▲</span>
+      <span class="sb-nav-label">Leaderboard</span>
+      <span class="sb-nav-badge" id="nb-leaderboard">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-tokenomics"         onclick="setView('tokenomics')">
+      <span class="sb-nav-icon">⟳</span>
+      <span class="sb-nav-label">Tokenomics</span>
+      <span class="sb-nav-badge" id="nb-tokenomics">—</span>
+    </div>
+  </div>
+
+  <!-- Tokenomics quick stats -->
+  <div class="sb-section">
+    <div class="sb-heading">Tokenomics</div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Max Supply</span>
+      <span class="sb-metric-val gold">2,100,000</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Circulating</span>
+      <span class="sb-metric-val" id="sb-circ">—</span>
+    </div>
+    <div class="sb-mini-bar">
+      <div class="sb-mini-fill gold" id="sb-circ-fill" style="width:0%"></div>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Burned</span>
+      <span class="sb-metric-val amber" id="sb-burned">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Reward Pool</span>
+      <span class="sb-metric-val cyan" id="sb-pool">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Burn Rate</span>
+      <span class="sb-metric-val amber">2% / upvote</span>
+    </div>
+  </div>
+
+  <!-- FRS quick stats -->
+  <div class="sb-section">
+    <div class="sb-heading">Your Status</div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Username</span>
+      <span class="sb-metric-val" id="sb-username">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Balance</span>
+      <span class="sb-metric-val gold" id="sb-bal">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">FRS Score</span>
+      <span class="sb-metric-val cyan" id="sb-frs">—</span>
+    </div>
+    <div class="sb-mini-bar">
+      <div class="sb-mini-fill" id="sb-frs-fill" style="width:50%"></div>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Upvote Weight</span>
+      <span class="sb-metric-val" id="sb-upvote-w">—</span>
+    </div>
+  </div>
+
+  <!-- GitHub sync -->
+  <div class="sb-section">
+    <div class="sb-heading">Cloud Sync</div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">GitHub</span>
+      <span class="sb-metric-val" id="sb-github-status">NOT CONFIGURED</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Last Push</span>
+      <span class="sb-metric-val cyan" id="sb-last-push">—</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-metric-lbl">Pushes (session)</span>
+      <span class="sb-metric-val" id="sb-push-count">0</span>
+    </div>
+    <button class="btn btn-ghost btn-sm w100 mt1" onclick="manualSync()" style="font-size:0.62rem">
+      ⬆ SYNC NOW
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MAIN CONTENT AREA — All views rendered here
+     ═══════════════════════════════════════════════════════════════════════ -->
+<main id="main">
+
+  <!-- ═══ INTELLIGENCE FEED ═══════════════════════════════════════════ -->
+  <div class="view active" id="view-feed">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--green);text-shadow:var(--glow-green)">
+          INTELLIGENCE FEED
+        </h1>
+        <div class="txs tdim mt1">Real-time geopolitical intelligence stream · FRS-weighted analyst contributions</div>
+      </div>
+      <div class="fx gap1 ac">
+        <span class="tbadge tbadge-g">LIVE</span>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('submit-modal')">+ SUBMIT INTEL</button>
+      </div>
+    </div>
+
+    <!-- Flash alerts strip -->
+    <div id="flash-alerts-strip"></div>
+
+    <!-- Feed items -->
+    <div id="feed-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading intelligence feed...</div>
+    </div>
+  </div>
+
+  <!-- ═══ SCENARIOS ═════════════════════════════════════════════════════ -->
+  <div class="view" id="view-scenarios">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--cyan);text-shadow:var(--glow-cyan)">
+          GEOPOLITICAL SCENARIOS
+        </h1>
+        <div class="txs tdim mt1">Probability-weighted scenario analysis · Admin ground-truth override · AI consensus engine</div>
+      </div>
+      <div class="fx gap1">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('new-scenario-modal')">+ NEW SCENARIO</button>
+      </div>
+    </div>
+    <div id="scenarios-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading scenarios...</div>
+    </div>
+  </div>
+
+  <!-- ═══ PREDICTION MARKETS ════════════════════════════════════════════ -->
+  <div class="view" id="view-predictions">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--amber);text-shadow:var(--glow-amber)">
+          PREDICTION MARKETS
+        </h1>
+        <div class="txs tdim mt1">FRS-gated forecasting · Brier-score calibration · Admin ground-truth resolution</div>
+      </div>
+      <div class="fx gap1">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('new-prediction-modal')">+ NEW MARKET</button>
+      </div>
+    </div>
+    <div id="predictions-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading prediction markets...</div>
+    </div>
+  </div>
+
+  <!-- ═══ AI AGENTS ══════════════════════════════════════════════════════ -->
+  <div class="view" id="view-agents">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--violet);text-shadow:var(--glow-violet)">
+          AI ANALYST SWARM
+        </h1>
+        <div class="txs tdim mt1">3 autonomous agents · Inter-agent affinity matrix · Dream State consolidation</div>
+      </div>
+      <span class="tbadge tbadge-v">AUTONOMOUS</span>
+    </div>
+
+    <!-- Agent grid -->
+    <div id="agents-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.8rem;margin-bottom:0.9rem"></div>
+
+    <!-- Affinity matrix -->
+    <div class="card">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Inter-Agent Affinity Matrix</div>
+          <div class="card-sub">Real-time socio-emotional vectors: Trust · Rivalry · Intellectual Sympathy</div>
+        </div>
+        <span class="tbadge tbadge-v">6D VECTORS</span>
+      </div>
+      <div id="affinity-graph"></div>
+    </div>
+
+    <!-- Live chat -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">Analyst Chat Stream</div>
+        <span class="tbadge tbadge-g">LIVE</span>
+      </div>
+      <div id="chat-log" style="height:280px;overflow-y:auto;font-family:var(--font-data);font-size:0.65rem;line-height:1.7;padding:0.3rem 0"></div>
+      <div class="divider"></div>
+      <div class="fx gap1">
+        <input type="text" class="ifield f1" id="chat-input" placeholder="Your analysis..." onkeydown="if(event.key==='Enter')sendChatMsg()"/>
+        <button class="btn btn-g btn-sm" onclick="sendChatMsg()">TRANSMIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ COGNITIVE ENGINE ═══════════════════════════════════════════════ -->
+  <div class="view" id="view-cognitive">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--violet);text-shadow:var(--glow-violet)">
+          COGNITIVE ENGINE
+        </h1>
+        <div class="txs tdim mt1">STM/LTM pipeline · Dream State consolidation · 2/3 consensus gate</div>
+      </div>
+    </div>
+    <div id="cognitive-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading cognitive engine...</div>
+    </div>
+  </div>
+
+  <!-- ═══ MINING DASHBOARD ═══════════════════════════════════════════════ -->
+  <div class="view" id="view-mining">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--amber);text-shadow:var(--glow-amber)">
+          PoUW MINING DASHBOARD
+        </h1>
+        <div class="txs tdim mt1">33-Year lifecycle · 3-Year halving epochs · Device-aware difficulty · Sybil PoW defence</div>
+      </div>
+      <button class="btn btn-mining" id="mining-dashboard-btn" onclick="toggleMining()">
+        ⬡ START MINING
+      </button>
+    </div>
+
+    <!-- Epoch metrics -->
+    <div class="dash-grid" id="mining-metrics"></div>
+
+    <!-- Live mining output -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">Real-Time Mining Output</div>
+        <span class="tbadge tbadge-a" id="mining-status-badge">IDLE</span>
+      </div>
+      <div class="pbar mb1"><div class="pbar-fill a" id="mining-pbar" style="width:0%"></div></div>
+      <div class="fx gap1 mb1" style="flex-wrap:wrap">
+        <span class="mono txs tdim" id="mining-nonce-display">Nonce: —</span>
+        <span class="mono txs tdim" id="mining-hash-display" style="word-break:break-all;flex:1;min-width:0">Hash: —</span>
+      </div>
+      <div id="mining-log" style="height:200px;overflow-y:auto;font-family:var(--font-data);font-size:0.6rem;color:var(--txt-sec);line-height:1.65;background:var(--surface);border-radius:var(--r);padding:0.5rem 0.7rem"></div>
+    </div>
+
+    <!-- Epoch timeline -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">33-Year Halving Schedule</div>
+        <span class="tbadge tbadge-gd">2025 → 2058</span>
+      </div>
+      <div id="epoch-timeline"></div>
+    </div>
+  </div>
+
+  <!-- ═══ OTC MARKET ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-market">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--green);text-shadow:var(--glow-green)">
+          OTC ESCROW MARKET
+        </h1>
+        <div class="txs tdim mt1">Cryptographic escrow · No gas fees · 10% AI-order tax → Network Reward Pool</div>
+      </div>
+      <div class="fx gap1">
+        <button class="btn btn-g btn-sm" onclick="openModal('sell-modal')">SELL MIR</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('buy-modal')">BUY MIR</button>
+      </div>
+    </div>
+    <div id="market-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading OTC market...</div>
+    </div>
+  </div>
+
+  <!-- ═══ TX LEDGER ══════════════════════════════════════════════════════ -->
+  <div class="view" id="view-ledger">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--cyan);text-shadow:var(--glow-cyan)">
+          TRANSACTION LEDGER
+        </h1>
+        <div class="txs tdim mt1">Immutable on-chain record · All MIR operations · Burn audit trail</div>
+      </div>
+    </div>
+    <div id="ledger-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading ledger...</div>
+    </div>
+  </div>
+
+  <!-- ═══ LEADERBOARD ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-leaderboard">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--gold);text-shadow:var(--glow-gold)">
+          FORECASTER LEADERBOARD
+        </h1>
+        <div class="txs tdim mt1">FRS-ranked · Brier-score calibrated · Ground-truth resolution required</div>
+      </div>
+    </div>
+    <div id="leaderboard-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading leaderboard...</div>
+    </div>
+  </div>
+
+  <!-- ═══ TOKENOMICS ════════════════════════════════════════════════════ -->
+  <div class="view" id="view-tokenomics">
+    <div class="fx ac jb mb2" style="flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <h1 class="hud txs" style="font-size:0.68rem;letter-spacing:0.12em;color:var(--gold);text-shadow:var(--glow-gold)">
+          TOKENOMICS ENGINE
+        </h1>
+        <div class="txs tdim mt1">Fixed 2.1M MIR · Deflationary human burns · Closed-loop AI recycling</div>
+      </div>
+    </div>
+    <div id="tokenomics-container">
+      <div class="tdim txs" style="padding:2rem;text-align:center">Loading tokenomics...</div>
+    </div>
+  </div>
+
+</main><!-- end #main -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODALS
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+    <div class="modal-title">⬡ OPERATIVE AUTHENTICATION</div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="authTab('login')">LOGIN</button>
+      <button class="tab-btn" onclick="authTab('register')">REGISTER</button>
+    </div>
+    <div class="tab-pane active" id="auth-login">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="ifield" id="login-username" placeholder="operative_handle"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Private Key (ED25519 / Base64)</label>
+        <input type="password" class="ifield mono" id="login-privkey" placeholder="your-private-key-base64..."/>
+      </div>
+      <button class="btn btn-g w100" onclick="doLogin()">⬡ AUTHENTICATE</button>
+    </div>
+    <div class="tab-pane" id="auth-register">
+      <div class="form-group">
+        <label class="form-label">Operative Handle</label>
+        <input type="text" class="ifield" id="reg-username" placeholder="2-24 alphanumeric chars"/>
+      </div>
+      <div id="keypair-display" style="display:none;margin-bottom:0.7rem">
+        <div class="form-group">
+          <label class="form-label">Public Key (share freely)</label>
+          <div class="ifield mono txs" id="gen-pubkey" style="word-break:break-all;min-height:2.2rem;padding:0.5rem;background:var(--surface);border-radius:var(--r)"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="color:var(--crimson)">⚠ Private Key — SAVE THIS NOW</label>
+          <div class="ifield mono txs" id="gen-privkey" style="word-break:break-all;min-height:2.2rem;padding:0.5rem;background:var(--surface);border-radius:var(--r)"></div>
+        </div>
+      </div>
+      <div class="fx gap1 mb2">
+        <button class="btn btn-ghost btn-sm f1" onclick="generateKeypair()">GENERATE KEYPAIR</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportKeys()">EXPORT</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platform Welcome Bonus</label>
+        <div class="mono txs tg">+10.00000000 MIR on registration</div>
+      </div>
+      <button class="btn btn-g w100" onclick="doRegister()">⬡ ENLIST OPERATIVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet Modal -->
+<div class="modal-overlay" id="wallet-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('wallet-modal')">✕</button>
+    <div class="modal-title">⬡ OPERATIVE WALLET</div>
+    <div id="wallet-content"></div>
+  </div>
+</div>
+
+<!-- Submit Intel Modal -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('submit-modal')">✕</button>
+    <div class="modal-title">◈ SUBMIT INTELLIGENCE</div>
+    <div class="form-group">
+      <label class="form-label">Headline</label>
+      <input type="text" class="ifield" id="submit-title" placeholder="Geopolitical intelligence report headline..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Analysis</label>
+      <textarea class="ifield" id="submit-desc" rows="4" placeholder="Detailed operational analysis..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags (comma-separated)</label>
+      <input type="text" class="ifield mono" id="submit-tags" placeholder="geopolitics, nato, ukraine"/>
+    </div>
+    <button class="btn btn-g w100" onclick="submitIntel()">⬡ SUBMIT INTEL</button>
+  </div>
+</div>
+
+<!-- New Scenario Modal -->
+<div class="modal-overlay" id="new-scenario-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('new-scenario-modal')">✕</button>
+    <div class="modal-title">⬡ NEW SCENARIO</div>
+    <div class="form-group">
+      <label class="form-label">Scenario Title</label>
+      <input type="text" class="ifield" id="scen-title" placeholder="e.g. Taiwan Kinetic Conflict 24-month horizon"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="ifield" id="scen-desc" rows="3" placeholder="Operational scenario parameters..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Initial Probability (%): <span id="scen-prob-val">25</span></label>
+      <input type="range" id="scen-prob" min="1" max="99" value="25" class="scenario-slider w100" oninput="document.getElementById('scen-prob-val').textContent=this.value"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Horizon (days)</label>
+      <input type="number" class="ifield mono" id="scen-horizon" value="365" min="1"/>
+    </div>
+    <button class="btn btn-g w100" onclick="submitScenario()">⬡ CREATE SCENARIO</button>
+  </div>
+</div>
+
+<!-- New Prediction Modal -->
+<div class="modal-overlay" id="new-prediction-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('new-prediction-modal')">✕</button>
+    <div class="modal-title">◆ NEW PREDICTION MARKET</div>
+    <div class="form-group">
+      <label class="form-label">Prediction Question</label>
+      <input type="text" class="ifield" id="pred-question" placeholder="Will X happen by date Y?"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Resolution Date</label>
+      <input type="date" class="ifield mono" id="pred-date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Option A</label>
+      <input type="text" class="ifield" id="pred-opt-a" placeholder="YES / Occurs / Confirmed"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Option B</label>
+      <input type="text" class="ifield" id="pred-opt-b" placeholder="NO / Does Not Occur / Denied"/>
+    </div>
+    <button class="btn btn-g w100" onclick="submitPrediction()">◆ OPEN MARKET</button>
+  </div>
+</div>
+
+<!-- Sell Modal -->
+<div class="modal-overlay" id="sell-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('sell-modal')">✕</button>
+    <div class="modal-title">▲ CREATE SELL ORDER</div>
+    <div class="form-group">
+      <label class="form-label">Amount (MIR)</label>
+      <input type="number" class="ifield mono" id="sell-amount" placeholder="0.00000000" min="0.00000001" step="0.00000001"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Price per MIR (USDT)</label>
+      <input type="number" class="ifield mono" id="sell-price" placeholder="0.00" min="0.01" step="0.01"/>
+    </div>
+    <div class="txs tdim mb2">Seller signs escrow lock. Buyer confirms payment off-chain. No gas fees.</div>
+    <button class="btn btn-g w100" onclick="createSellOrder()">⬡ CREATE ESCROW ORDER</button>
+  </div>
+</div>
+
+<!-- Buy Modal -->
+<div class="modal-overlay" id="buy-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('buy-modal')">✕</button>
+    <div class="modal-title">▲ CREATE BUY ORDER</div>
+    <div class="form-group">
+      <label class="form-label">Amount (MIR)</label>
+      <input type="number" class="ifield mono" id="buy-amount" placeholder="0.00000000" min="0.00000001" step="0.00000001"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max Price per MIR (USDT)</label>
+      <input type="number" class="ifield mono" id="buy-price" placeholder="0.00" min="0.01" step="0.01"/>
+    </div>
+    <button class="btn btn-ghost w100" onclick="createBuyOrder()">◈ PLACE BUY ORDER</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FLASH ALERT OVERLAY
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="flash-overlay"></div>
+<div id="flash-banner">
+  <div id="flash-title">⬡ OSINT FLASH ALERT</div>
+  <div id="flash-msg"></div>
+  <div id="flash-cooldown"></div>
+  <button class="btn btn-ghost btn-sm mt1" onclick="dismissFlash()">ACKNOWLEDGE</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ADMIN SOVEREIGN TERMINAL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="admin-terminal">
+  <div id="terminal-header">
+    <div id="terminal-title">
+      <span>⬡</span>
+      <span>SOVEREIGN EXECUTIVE TERMINAL</span>
+      <span class="tbadge tbadge-gd" style="font-size:0.42rem">RULE 0</span>
+      <span id="admin-pubkey-status" class="tbadge tbadge-g" style="font-size:0.42rem">KEY UNSET</span>
+    </div>
+    <div class="fx gap1 ac">
+      <span class="mono txs tdim" id="terminal-db-size">—</span>
+      <button class="btn btn-ghost btn-sm" onclick="manualSync()" style="font-size:0.56rem">⬆ SYNC</button>
+      <div class="form-group" style="margin:0">
+        <input type="text" class="ifield mono" id="admin-pubkey-input"
+          placeholder="Admin public key (ED25519)..."
+          style="width:220px;font-size:0.58rem;padding:0.25rem 0.5rem"/>
+      </div>
+      <button class="nbtn gold btn-sm" onclick="setAdminPubKey()" style="font-size:0.55rem">SET KEY</button>
+      <button class="nbtn" onclick="toggleAdminTerminal()" style="font-size:0.6rem">✕ CLOSE</button>
+    </div>
+  </div>
+  <div id="terminal-log"></div>
+  <div id="terminal-input-row">
+    <span id="terminal-prompt">mir▸</span>
+    <input type="text" id="terminal-cmd" placeholder="Type command... (help for reference)"
+      onkeydown="if(event.key==='Enter')execAdminCmd(this.value)"/>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PoUW SYBIL CHALLENGE OVERLAY
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="pouw-overlay" class="hidden">
+  <div class="pouw-box">
+    <div class="pouw-hex">⬡</div>
+    <div class="pouw-title">SYBIL DEFENCE — PoUW CHALLENGE</div>
+    <div class="pouw-desc">
+      Anomalous activity detected. Running Proof-of-Useful-Work challenge
+      to validate node authenticity. This protects the network from automated bots.
+    </div>
+    <div class="pbar w100" style="height:3px">
+      <div class="pbar-fill a" id="pouw-challenge-fill" style="width:0%"></div>
+    </div>
+    <div class="mono txs tdim" id="pouw-challenge-status">Generating challenge nonce...</div>
+    <div class="pouw-hash" id="pouw-challenge-hash">—</div>
+    <div class="pouw-epoch" id="pouw-challenge-epoch">Difficulty: 4 leading zeros</div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     GHOST-RENDER CACHE ROUTER + DYNAMIC MODULE LOADER
+     This is the ONLY JavaScript in index.html.
+     All subsystems are loaded on-demand via dynamic import().
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+// ── Ghost-Render Cache Router ──────────────────────────────────────────
+// Read IndexedDB FIRST — before any module loads — to populate the boot
+// screen with cached state instantly. This gives zero-latency feedback
+// even on slow connections.
+
+const BOOT_DB_NAME    = 'mir_sovereign_v2';
+const BOOT_DB_VERSION = 1;
+const BOOT_STORE_KEY  = 'db_snapshot';
+
+let _bootDB = null;
+
+function bootSetStatus(msg) {
+  const el = document.getElementById('boot-status');
+  if (el) el.textContent = msg;
+}
+
+function bootSetProgress(pct) {
+  const el = document.getElementById('boot-fill');
+  if (el) el.style.width = `${Math.min(100, pct)}%`;
+}
+
+// Open the sovereign cache IDB
+function openBootIDB() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open(BOOT_DB_NAME, BOOT_DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('state')) {
+        db.createObjectStore('state', { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains('snapshots')) {
+        db.createObjectStore('snapshots', { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = (e) => { _bootDB = e.target.result; resolve(_bootDB); };
+    req.onerror   = () => resolve(null); // graceful: no cache available
+  });
+}
+
+// Read a snapshot from the cache — non-blocking
+async function ghostReadSnapshot() {
+  if (!_bootDB) return null;
+  try {
+    return await new Promise((res) => {
+      const tx    = _bootDB.transaction('snapshots', 'readonly');
+      const store = tx.objectStore('snapshots');
+      const req   = store.get(BOOT_STORE_KEY);
+      req.onsuccess = () => res(req.result ?? null);
+      req.onerror   = () => res(null);
+    });
+  } catch { return null; }
+}
+
+// Populate HUD strip from cached data instantly
+function populateBootHUD(snap) {
+  if (!snap) return;
+  const d = snap.data;
+  if (!d) return;
+  // Supply strip
+  const fmt = (n) => n != null ? (n / 1e8).toFixed(2) : '—';
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.textContent = val;
+  };
+  setEl('hud-supply',  d.circulatingSupply != null ? fmt(d.circulatingSupply) : null);
+  setEl('hud-burned',  d.burned            != null ? fmt(d.burned)            : null);
+  setEl('hud-pool',    d.networkPool       != null ? fmt(d.networkPool)       : null);
+  setEl('hud-epoch',   d.currentEpoch      != null ? `EPOCH ${d.currentEpoch}` : null);
+  setEl('sb-circ',     d.circulatingSupply != null ? fmt(d.circulatingSupply) + ' MIR' : null);
+  setEl('sb-burned',   d.burned            != null ? fmt(d.burned) + ' MIR' : null);
+  setEl('sb-pool',     d.networkPool       != null ? fmt(d.networkPool) + ' MIR' : null);
+}
+
+// ── Module load sequence ───────────────────────────────────────────────
+async function bootstrapApplication() {
+  // ── Environment feature detection ──────────────────────────────────────
+  // SharedArrayBuffer requires COOP/COEP headers (not available on GitHub Pages).
+  // We detect this once and store it globally — all modules read window._ENV.
+  window._ENV = (function() {
+    const sab = (() => { try { return typeof SharedArrayBuffer !== 'undefined' && new SharedArrayBuffer(1) && true; } catch { return false; } })();
+    const gpu = typeof navigator !== 'undefined' && !!navigator.gpu;
+    const bc  = typeof BroadcastChannel !== 'undefined';
+    const idb = typeof indexedDB !== 'undefined';
+    return {
+      sharedArrayBuffer: sab,   // false on GitHub Pages without COOP/COEP
+      webGPU:            gpu,
+      broadcastChannel:  bc,
+      indexedDB:         idb,
+      // Workers always use structured clone (no SAB) — already the case in our code
+      workerMemory: 'structured_clone',
+    };
+  })();
+  console.log('[BOOT] Environment:', JSON.stringify(window._ENV));
+
+  bootSetStatus('Opening Sovereign Cache (IndexedDB)...');
+  bootSetProgress(8);
+
+  await openBootIDB();
+  bootSetStatus('Reading ghost snapshot...');
+  bootSetProgress(18);
+
+  const snap = await ghostReadSnapshot();
+  if (snap) {
+    bootSetStatus('Ghost snapshot found — restoring HUD state...');
+    populateBootHUD(snap);
+  } else {
+    bootSetStatus('No snapshot — fresh session initialising...');
+  }
+  bootSetProgress(28);
+
+  window._bootDB   = _bootDB;
+  window._bootSnap = snap;
+
+  // ── Module loading — each import is individually guarded ─────────────
+  // A failing module is logged and skipped; the platform degrades gracefully
+  // rather than stalling. All paths are relative (./) for subpath hosting.
+
+  // Resolve module paths relative to index.html location.
+  // import.meta.url gives the absolute URL of THIS script (index.html inline module),
+  // which correctly handles subpath hosting like /mir-Platform/.
+  const _base = new URL('.', import.meta.url).href;
+  const _resolve = (file) => _base + file;
+
+  const _load = async (label, file, progress) => {
+    bootSetStatus(`Loading ${label}...`);
+    bootSetProgress(progress);
+    try {
+      const mod = await import(/* @vite-ignore */ _resolve(file));
+      console.log(`[BOOT] ${label} loaded`);
+      return mod;
+    } catch (err) {
+      console.error(`[BOOT] ${label} failed:`, err.message);
+      bootSetStatus(`⚠ ${label} failed — continuing...`);
+      return null;
+    }
+  };
+
+  const IdentityKDF = await _load('identity cryptography',  'identity_kdf.js',   40);
+  if (IdentityKDF) window.IdentityKDF = IdentityKDF;
+
+  const ResModule   = await _load('resilience layer',       'resilience.js',     50);
+  if (ResModule) window.ResilienceModule = ResModule;
+
+  const AIEvolution = await _load('AI Evolution engine',    'ai_evolution.js',   62);
+  if (AIEvolution) window.AIEvolution = AIEvolution;
+
+  const MeshNetwork = await _load('mesh network layer',     'mesh_network.js',   72);
+  if (MeshNetwork) window.MeshNetwork = MeshNetwork;
+
+  const MeshCRDT    = await _load('CRDT consistency engine','mesh_crdt.js',      80);
+  if (MeshCRDT) window.MeshCRDT = MeshCRDT;
+
+  const AIMeta      = await _load('AI meta layer',          'ai_meta.js',        88);
+  if (AIMeta) window.AIMeta = AIMeta;
+
+  // ── Hand off to application orchestrator ─────────────────────────────
+  bootSetStatus('Starting application...');
+  bootSetProgress(94);
+
+  if (!AIEvolution) {
+    bootSetStatus('❌ Critical module failed to load. Check DevTools console.');
+    console.error('[BOOT] ai_evolution.js failed — cannot start application.');
+    return;
+  }
+
+  if (typeof AIEvolution.initApplication === 'function') {
+    try {
+      await AIEvolution.initApplication({
+        db:   _bootDB,
+        snap,
+        KDF:  IdentityKDF  || {},
+        Mesh: MeshNetwork  || {},
+        CRDT: MeshCRDT     || {},
+        Meta: AIMeta       || {},
+      });
+    } catch (err) {
+      console.error('[BOOT] initApplication error:', err);
+      bootSetStatus('⚠ Init error — check DevTools console.');
+    }
+  }
+
+  bootSetProgress(100);
+  bootSetStatus('MIR Platform online ✓');
+
+  await new Promise(r => setTimeout(r, 400));
+  const overlay = document.getElementById('boot-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// ── Kick off boot sequence on DOMContentLoaded ─────────────────────────
+function _startBoot() {
+  bootstrapApplication().catch(err => {
+    console.error('[BOOT] Fatal boot error:', err);
+    const el = document.getElementById('boot-status');
+    if (el) el.textContent = '❌ Fatal error — open DevTools console for details.';
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _startBoot);
+} else {
+  _startBoot();
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+    e.preventDefault();
+    if (typeof toggleAdminTerminal === 'function') toggleAdminTerminal();
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEMANTIC RENDERER
+// Efficient DOM updates from mir:synthesis_complete events.
+//
+// Anti-thrash strategy:
+//   1. Read phase  — all DOM reads batched before writes (getBoundingClientRect,
+//      offsetHeight, etc.) happen in a single synchronous block
+//   2. Write phase — all DOM mutations happen inside one requestAnimationFrame
+//      callback, after the read phase is complete
+//   3. Dirty set   — only elements whose backing data actually changed are
+//      touched; identical values are skipped entirely
+//   4. DocumentFragment — list rebuilds use a fragment and a single
+//      replaceChildren() call to avoid per-item reflow
+//   5. CSS custom properties — numeric values are written as CSS vars on a
+//      single container element; bar widths and colours use CSS calc() so
+//      the browser only repaints, never reflows
+//
+// This gives O(changed) DOM writes per synthesis cycle, not O(total).
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initSemanticRenderer() {
+  'use strict';
+
+  // ── Dirty tracking ───────────────────────────────────────────────────────
+  const _prev = {
+    scenarioProbs:  {},   // id → last written prob
+    agentWeights:   {},   // id → last written weights (JSON string for cheap compare)
+    affinityMatrix: {},   // id-pair → last written score
+  };
+
+  // ── RAF frame guard — at most one pending frame ──────────────────────────
+  let _rafPending   = false;
+  let _pendingMeta  = null;
+
+  // ── CSS custom property host ─────────────────────────────────────────────
+  // All numeric results are written here; CSS rules reference var(--X)
+  // so no per-element style.width = recalculation triggers layout.
+  const _cssHost = document.documentElement;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function _setVar(name, value) {
+    _cssHost.style.setProperty(name, value);
+  }
+
+  function _setText(id, text) {
+    const el = document.getElementById(id);
+    if (el && el.textContent !== text) el.textContent = text;
+  }
+
+  function _setWidth(id, pct) {
+    const el = document.getElementById(id);
+    if (el) el.style.width = pct + '%';
+  }
+
+  function _setColor(el, value, lo, mid, hi) {
+    if (!el) return;
+    const c = value >= hi  ? 'var(--crimson)'
+            : value >= mid ? 'var(--amber)'
+            : 'var(--green)';
+    if (el.style.color !== c) el.style.color = c;
+  }
+
+  // ── READ phase — snapshot all values we need before touching DOM ─────────
+  function _readPhase() {
+    const db = window._MIR_DB;
+    if (!db) return null;
+    return {
+      scenarios:   (db.scenarios  || []).slice(0, 64),
+      agents:      db.agents      || {},
+      tokenomics:  db.tokenomics  || {},
+      miningState: db.miningState || {},
+    };
+  }
+
+  // ── WRITE phase — all mutations happen here, inside one RAF ─────────────
+  function _writePhase(snapshot, meta) {
+    if (!snapshot) return;
+    const { scenarios, agents, tokenomics, miningState } = snapshot;
+
+    // ── 1. Scenario probability bars & labels ──────────────────────────────
+    scenarios.forEach(s => {
+      const prob = s.adminOverride ? (s.adminOverrideValue ?? s.consensusProb) : s.consensusProb;
+      if (_prev.scenarioProbs[s.id] === prob) return; // skip if unchanged
+      _prev.scenarioProbs[s.id] = prob;
+
+      // Write as CSS custom property — bars use CSS var, no forced layout
+      _setVar(`--prob-${s.id.slice(0, 8)}`, prob + '%');
+
+      // Update numeric label (textContent, no reflow)
+      _setText(`prob-label-${s.id.slice(0, 8)}`, prob + '%');
+
+      // Update inline progress bar if it exists as a direct element
+      const bar = document.getElementById(`scen-bar-${s.id.slice(0, 8)}`);
+      if (bar) bar.style.width = prob + '%';
+
+      // Colour-code by risk level
+      const label = document.getElementById(`prob-badge-${s.id.slice(0, 8)}`);
+      _setColor(label, prob, 0, 40, 70);
+    });
+
+    // ── 2. Agent semantic weight vectors ───────────────────────────────────
+    const AGENT_LABELS = ['Geo', 'Econ', 'Cyber', 'Hist', 'Cred', 'Urgency'];
+    Object.entries(agents).forEach(([id, agent]) => {
+      const sw    = agent.semanticWeights;
+      if (!sw) return;
+      const key   = sw.join(',');                // cheap dirty check
+      if (_prev.agentWeights[id] === key) return;
+      _prev.agentWeights[id] = key;
+
+      // Write all 6 dims as CSS vars (single batch, no layout reads)
+      sw.forEach((v, i) => {
+        _setVar(`--sw-${id}-${i}`, (v * 100).toFixed(1) + '%');
+      });
+
+      // Update any text readouts
+      sw.forEach((v, i) => {
+        _setText(`sw-${id}-${i}-val`, (v * 100).toFixed(0));
+      });
+
+      // FRS bar
+      const frs    = agent.frs || 50;
+      const frsBar = document.getElementById(`${id}-frs-bar`);
+      if (frsBar) frsBar.style.width = frs + '%';
+      _setText(`${id}-frs`, String(frs));
+    });
+
+    // ── 3. Affinity matrix scores ──────────────────────────────────────────
+    const agentIds = ['resident', 'macro', 'cyber', 'geo'];
+    agentIds.forEach(id => {
+      const agent = agents[id];
+      if (!agent?.affinity) return;
+      agentIds.forEach(other => {
+        if (id === other) return;
+        const score   = Math.round(agent.affinity[other] ?? 50);
+        const pairKey = `${id}-${other}`;
+        if (_prev.affinityMatrix[pairKey] === score) return;
+        _prev.affinityMatrix[pairKey] = score;
+        _setText(`aff-${id}-${other}`, String(score));
+        _setVar(`--aff-${id}-${other}`, score + '%');
+      });
+    });
+
+    // ── 4. Tokenomics HUD strip (CSS vars for counters) ───────────────────
+    const circ  = tokenomics.circulatingSupply || 0;
+    const burned= tokenomics.burned            || 0;
+    const pool  = tokenomics.networkPool       || 0;
+    const fmt2  = v => (v / 100_000_000).toFixed(2);
+
+    _setVar('--tok-supply', '"' + fmt2(circ)   + '"');
+    _setVar('--tok-burned', '"' + fmt2(burned) + '"');
+    _setVar('--tok-pool',   '"' + fmt2(pool)   + '"');
+
+    // Direct text updates for HUD elements (fast path)
+    _setText('hud-supply', fmt2(circ));
+    _setText('hud-burned', fmt2(burned));
+    _setText('hud-pool',   fmt2(pool));
+
+    // ── 5. Mining / epoch badge ───────────────────────────────────────────
+    const epoch   = miningState.currentEpoch || 1;
+    const hashrate= miningState.hashrate     || 0;
+    _setText('hud-epoch',    'EPOCH ' + epoch);
+    _setText('sb-epoch-badge', 'E' + epoch);
+    if (hashrate) _setText('hud-hashrate', hashrate + ' H/s');
+
+    // ── 6. Synthesis meta badge (dev/debug element if present) ────────────
+    if (meta) {
+      _setText('synth-gpu-badge', meta.gpuUsed ? 'GPU' : 'CPU');
+      _setText('synth-batch-count', String(meta.batches || 0));
+      _setText('synth-last-ms',     (meta.lastBatchMs || 0).toFixed(0) + 'ms');
+    }
+  }
+
+  // ── Efficient scenario list rebuild using DocumentFragment ───────────────
+  // Called only when scenario count changes (rare), not on every weight update.
+  let _lastScenarioCount = -1;
+
+  function _rebuildScenarioListIfNeeded(scenarios) {
+    const container = document.getElementById('scenarios-container');
+    if (!container) return;
+    if (scenarios.length === _lastScenarioCount) return; // no structural change
+    _lastScenarioCount = scenarios.length;
+
+    // Build entirely in a DocumentFragment — zero reflows during construction
+    const frag = document.createDocumentFragment();
+    scenarios.forEach(s => {
+      const prob = s.adminOverride ? (s.adminOverrideValue ?? s.consensusProb) : s.consensusProb;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.cssText = 'margin-bottom:0.7rem';
+
+      // Use data attributes for targeting by CSS and JS — no inline style reads
+      card.dataset.scenarioId  = s.id;
+      card.dataset.prob        = prob;
+      card.dataset.sovereign   = s.adminOverride ? 'true' : 'false';
+
+      card.innerHTML = [
+        '<div class="card-hd">',
+          '<div>',
+            '<div class="card-title">',
+              (typeof _escH === 'function' ? _escH(s.title) : s.title),
+              s.adminOverride ? ' <span class="tbadge tbadge-gd">OVERRIDE</span>' : '',
+            '</div>',
+            '<div class="card-sub">',
+              (typeof _escH === 'function' ? _escH(s.desc || '') : (s.desc || '')),
+            '</div>',
+          '</div>',
+          '<span class="tbadge tbadge-g" id="prob-badge-' + s.id.slice(0,8) + '">' + prob + '%</span>',
+        '</div>',
+        // Progress bar — references CSS custom property via inline style
+        '<div class="pbar mb1">',
+          '<div class="pbar-fill g" id="scen-bar-' + s.id.slice(0,8) + '" style="width:' + prob + '%"></div>',
+        '</div>',
+        // Agent weight breakdown
+        '<div style="display:flex;gap:0.5rem;font-size:0.62rem;color:var(--txt-dim);margin-bottom:0.45rem">',
+          '<span style="color:var(--amber)">Macro: ' + ((s.aiWeights?.macro||0.33)*100).toFixed(0) + '%</span>',
+          '<span style="color:var(--crimson)">Cyber: ' + ((s.aiWeights?.cyber||0.33)*100).toFixed(0) + '%</span>',
+          '<span style="color:var(--green)">Geo: '   + ((s.aiWeights?.geo  ||0.34)*100).toFixed(0) + '%</span>',
+        '</div>',
+        // Probability slider (disabled for admin-overridden)
+        s.adminOverride
+          ? '<div style="font-size:0.62rem;color:var(--amber);margin-bottom:0.4rem">Locked by sovereign override.</div>'
+          : '<input type="range" min="1" max="99" value="' + prob + '" '
+            + 'oninput="window._mirScenProb && window._mirScenProb(\'' + s.id + '\',this.value)" '
+            + 'style="width:100%;accent-color:var(--green);margin-bottom:0.4rem">',
+        '<div style="display:flex;align-items:center;gap:0.75rem;font-size:0.62rem;color:var(--txt-dim)">',
+          '<span>Horizon: ' + (s.horizon || 0) + ' days</span>',
+          '<span>by ' + (typeof _escH === 'function' ? _escH(s.author||'') : (s.author||'')) + '</span>',
+          '<button onclick="window._mirUpvoteScen && window._mirUpvoteScen(\'' + s.id + '\')" '
+            + 'style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.38rem;font-size:0.62rem;color:var(--txt-dim);cursor:pointer">',
+            '▲ ' + (s.upvotes || 0),
+          '</button>',
+        '</div>',
+      ].join('');
+
+      frag.appendChild(card);
+    });
+
+    // Single DOM mutation — replaces all children in one operation
+    container.replaceChildren(frag);
+  }
+
+  // ── Main synthesis event handler ─────────────────────────────────────────
+  window.addEventListener('mir:synthesis_complete', (e) => {
+    _pendingMeta = e.detail || {};
+
+    // Coalesce multiple rapid events into a single RAF frame
+    if (_rafPending) return;
+    _rafPending = true;
+
+    requestAnimationFrame(() => {
+      _rafPending = false;
+      const meta     = _pendingMeta;
+      _pendingMeta   = null;
+
+      // READ phase — no DOM writes yet
+      const snapshot = _readPhase();
+
+      // WRITE phase — all DOM mutations, no reads
+      _writePhase(snapshot, meta);
+
+      // Structural rebuild (only if needed)
+      if (snapshot?.scenarios) {
+        _rebuildScenarioListIfNeeded(snapshot.scenarios);
+      }
+    });
+  });
+
+  // ── Also handle the mir:ready event (initial render on boot) ─────────────
+  window.addEventListener('mir:ready', () => {
+    // Trigger an initial render pass once DB is loaded
+    requestAnimationFrame(() => {
+      const snapshot = _readPhase();
+      _writePhase(snapshot, null);
+      if (snapshot?.scenarios) _rebuildScenarioListIfNeeded(snapshot.scenarios);
+    });
+  });
+
+  // ── Expose renderer for manual trigger (e.g. after admin override) ────────
+  window._mirSemanticRenderer = {
+    forceUpdate() {
+      requestAnimationFrame(() => {
+        const snapshot = _readPhase();
+        _writePhase(snapshot, null);
+        if (snapshot?.scenarios) {
+          _lastScenarioCount = -1; // force full rebuild
+          _rebuildScenarioListIfNeeded(snapshot.scenarios);
+        }
+      });
+    },
+    clearCache() {
+      Object.keys(_prev.scenarioProbs).forEach(k  => delete _prev.scenarioProbs[k]);
+      Object.keys(_prev.agentWeights).forEach(k   => delete _prev.agentWeights[k]);
+      Object.keys(_prev.affinityMatrix).forEach(k => delete _prev.affinityMatrix[k]);
+      _lastScenarioCount = -1;
+    },
+  };
+
+})();
+
+</script>
+
+</body>
+</html>
