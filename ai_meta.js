@@ -137,7 +137,11 @@ function _gcBlobURLs() {
   const cutoff = now - BLOB_WORKER_TIMEOUT * 3;
   const stale  = _blobURLRegistry.filter(e => e.createdAt < cutoff);
   stale.forEach(e => _revokeBlobURL(e.blobURL));
-  if (stale.length > 0) _metaLog(`GC: revoked ${stale.length} stale Blob URLs`, 'info');
+  if (stale.length > 0) {
+    _metaLog(`GC: revoked ${stale.length} stale Blob URLs`, 'info');
+    // FIX: reassign registry after filter to actually remove stale entries
+    _blobURLRegistry = _blobURLRegistry.filter(e => e.createdAt >= cutoff);
+  }
 }
 
 /**
@@ -497,7 +501,13 @@ self.onmessage = function(e) {
  * Communication via postMessage with origin checking.
  */
 function _initSandboxIframe() {
-  if (_sandboxIframe) return _sandboxIframe;
+  // Remove stale iframe from DOM before creating a new one
+  if (_sandboxIframe) {
+    try {
+      if (_sandboxIframe.parentNode) _sandboxIframe.parentNode.removeChild(_sandboxIframe);
+    } catch {}
+    _sandboxIframe = null;
+  }
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('sandbox', 'allow-scripts');

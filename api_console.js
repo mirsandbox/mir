@@ -111,7 +111,8 @@ const API_MANIFEST = {
           let parsed;
           try { parsed = JSON.parse(args.payload); } catch { throw new Error('Invalid JSON payload'); }
           parsed.ts = Date.now();
-          return mesh.broadcast?.(parsed) ?? mesh.broadcastDelta?.(parsed) ?? 'broadcast sent (no return value)';
+          const sent = mesh.broadcastDelta?.(parsed) ?? mesh.broadcast?.(parsed);
+        return sent !== undefined ? `Broadcast sent to ${sent} peer(s)` : 'Broadcast dispatched';
         },
       },
       {

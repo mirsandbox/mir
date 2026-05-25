@@ -1572,6 +1572,24 @@ export function getMeshStatus() {
   };
 }
 
+/**
+ * broadcastDelta(payload)
+ * Public export. Broadcasts a CRDT delta or any payload to all connected peers.
+ * Used by data_synthesis.js and api_console.js.
+ * @param {object} payload
+ * @returns {number} count of peers reached
+ */
+export function broadcastDelta(payload) {
+  if (!payload || typeof payload !== 'object') return 0;
+  return _broadcastToPeers({
+    type:      payload.type || 'delta',
+    nodeId:    _localNodeId,
+    ts:        Date.now(),
+    ...payload,
+  });
+}
+
+
 export function getAnomalyLog() { return _anomalyLog.slice(); }
 export function getPeerList()   { return [..._peers.entries()].map(([id, e]) => ({ id, state: e.state, lastSeen: e.lastSeen })); }
 

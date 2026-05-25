@@ -1496,6 +1496,26 @@ export function getCRDTSummary() {
   };
 }
 
+/**
+ * getCRDTField(fieldPath)
+ * Read a value from the CRDT-backed DB by dot-separated path.
+ * e.g. getCRDTField('tokenomics.burned') → number
+ * Used by api_console.js and support_agent.js.
+ * @param {string} fieldPath
+ * @returns {*}
+ */
+export function getCRDTField(fieldPath) {
+  if (!_db || !fieldPath) return undefined;
+  const keys = String(fieldPath).split('.');
+  let   val  = _db;
+  for (const k of keys) {
+    if (val === null || val === undefined) return undefined;
+    val = val[k];
+  }
+  return val;
+}
+
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PHOENIX SPORE ENGINE — Crash-Safe State Recovery
 // Isolated ledger snapshot persistence with signature verification.

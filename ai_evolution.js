@@ -418,15 +418,26 @@ export function updateAffinity(agentId,interactionType='default') {
 // ── Claude API ────────────────────────────────────────────────────────────
 async function _callClaude(sys,usr,maxT=220) {
   const key=window._MIR_ANTHROPIC_KEY||localStorage.getItem('mir_anthropic_key'); if(!key) return null;
+  // Circuit breaker: skip if anthropic circuit is open
+  if (_Resilience && !_Resilience.cbCanRequest('anthropic')) {
+    console.warn('[MIR] Anthropic circuit OPEN — skipping AI call');
+    return null;
+  }
   try {
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxT,system:sys,messages:[{role:'user',content:usr}]}),
     });
-    if(!res.ok) return null;
-    const d=await res.json(); return d.content?.[0]?.text||null;
-  } catch { return null; }
+    if(!res.ok) { if (_Resilience) _Resilience.cbRecordFailure('anthropic'); return null; }
+    const d=await res.json();
+    if (_Resilience) _Resilience.cbRecordSuccess('anthropic');
+    return d.content?.[0]?.text||null;
+  } catch (e) {
+    if (_Resilience) _Resilience.cbRecordFailure('anthropic');
+    console.warn('[MIR] Claude API error:', e.message);
+    return null;
+  }
 }
 
 // ── Agent Speech Engine ───────────────────────────────────────────────────
@@ -554,6 +565,21 @@ export async function engageDreamState() {
 
   if (!_dreamCancel) {
     _executeDreamConsolidation();
+    // Invoke ai_meta.js deep consolidation if available
+    if (_Meta && typeof _Meta.executeDreamConsolidationMeta === 'function') {
+      try {
+        const payload = _Meta.prepareDreamStatePayload
+          ? _Meta.prepareDreamStatePayload(_DB, _STM)
+          : { agents: _DB.agents, stm: _STM, cycle: _DB.dreamState.cycle + 1 };
+        const results = await _Meta.executeDreamConsolidationMeta(payload);
+        if (results && _Meta.commitDreamResults) {
+          await _Meta.commitDreamResults(results, _DB);
+          _adminLog('Meta-layer Dream consolidation committed.', 'ok');
+        }
+      } catch (metaErr) {
+        _adminLog(`Meta Dream error (non-fatal): ${metaErr.message}`, 'warn');
+      }
+    }
     _DB.dreamState.lastRun=_now(); _DB.dreamState.cycle++;
     _DB.dreamState.lastConsolidationSummary=`Cycle ${_DB.dreamState.cycle}: ${approveCount}/3 consensus, ${stmAll().length} STM items consolidated`;
     markDirty();
@@ -1981,6 +2007,8 @@ function _bridgeGlobals() {
   window.getChatData          = getChatData;
   window.getDreamStateData    = getDreamStateData;
   window.getSTMData           = getSTMData;
+  window.applyFRS             = applyFRS;
+  window.getFRSWeight         = getFRSWeight;
 
   // Inline event helpers used by dynamically-generated HTML
   window._mirUpvote       = (id)        => upvoteItem(id);
@@ -2036,6 +2064,28 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
     },
     isReady: () => !!_DB,
   };
+
+  // Expose Mesh + CRDT modules for api_console.js and support_agent.js
+  if (_Mesh) {
+    window._mirMesh = {
+      getPeers:        _Mesh.getPeerList   || (() => []),
+      getMeshStatus:   _Mesh.getMeshStatus || (() => ({})),
+      broadcastDelta:  _Mesh.broadcastDelta,
+      toggleMining:    _Mesh.toggleMining,
+      getAnomalyLog:   _Mesh.getAnomalyLog || (() => []),
+    };
+  }
+  if (_CRDT) {
+    window._mirCRDT = {
+      getCRDTField:        _CRDT.getCRDTField,
+      getCRDTStatus:       _CRDT.getCRDTStatus,
+      getCRDTSummary:      _CRDT.getCRDTSummary,
+      applySovereignDelta: _CRDT.applySovereignDelta,
+      getVectorClock:      _CRDT.getCRDTStatus,
+      getSyncStatus:       _CRDT.getCRDTStatus,
+      getMergeLog:         _CRDT.getMergeLog,
+    };
+  }
 
   // ── 2. Load / restore DB (IDB ghost snapshot → localStorage → fresh) ──
   _DB = _loadDB(snap);
