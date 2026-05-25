@@ -1440,7 +1440,134 @@ export function setSovereignFrozen(frozen) {
 // Called by initApplication() in ai_evolution.js after all modules load.
 // ═══════════════════════════════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATTERY-AWARE THROTTLE ENGINE
+// Uses navigator.getBattery() to dynamically adjust agent update frequency.
+// Tiers:
+//   FULL    (>30% & charging)  → multiplier 1.0  (normal)
+//   MEDIUM  (15–30% or unplugged & active) → 2.0  (half rate)
+//   LOW     (<15% & unplugged) → 5.0  (20% of normal)
+//   CRITICAL(<8%  & unplugged) → 0    (suspended — CPU floor only)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _battery = {
+  level:     1.0,
+  charging:  true,
+  supported: false,
+  multiplier: 1.0,
+  // Tier thresholds
+  TIERS: [
+    { maxLevel: 0.08, charging: false, multiplier: 0,   label: 'CRITICAL' },
+    { maxLevel: 0.15, charging: false, multiplier: 8.0, label: 'LOW'      },
+    { maxLevel: 0.30, charging: false, multiplier: 3.0, label: 'MEDIUM'   },
+    { maxLevel: 1.00, charging: false, multiplier: 1.5, label: 'ACTIVE'   },
+    { maxLevel: 1.00, charging: true,  multiplier: 1.0, label: 'FULL'     },
+  ],
+};
+
+function _updateBatteryMultiplier() {
+  const { level, charging } = _battery;
+  for (const tier of _battery.TIERS) {
+    if (level <= tier.maxLevel && charging === tier.charging) {
+      _battery.multiplier = tier.multiplier;
+      _battery.tier       = tier.label;
+      return;
+    }
+  }
+  _battery.multiplier = 1.0;
+  _battery.tier       = 'FULL';
+}
+
+async function _initBatteryMonitor() {
+  if (!navigator.getBattery) return;
+  try {
+    const bat = await navigator.getBattery();
+    _battery.supported = true;
+    const update = () => {
+      _battery.level    = bat.level;
+      _battery.charging = bat.charging;
+      _updateBatteryMultiplier();
+      console.log(`[META] Battery: ${Math.round(bat.level*100)}% ${bat.charging?'⚡':'🔋'} → tier ${_battery.tier} ×${_battery.multiplier}`);
+    };
+    update();
+    bat.addEventListener('levelchange',   update);
+    bat.addEventListener('chargingchange', update);
+  } catch {}
+}
+
+/**
+ * _throttledInterval(fn, baseMs)
+ * Returns a { start(), stop(), updateRate() } controller.
+ * Dynamically checks _battery.multiplier on each tick.
+ */
+function _throttledInterval(fn, baseMs) {
+  let _timer  = null;
+  let _active = false;
+
+  const _tick = async () => {
+    if (!_active) return;
+    const mult = _battery.multiplier;
+    if (mult === 0) {
+      // CRITICAL — reschedule with a long delay, skip execution
+      _timer = setTimeout(_tick, baseMs * 20);
+      return;
+    }
+    try { await fn(); } catch {}
+    const next = baseMs * mult;
+    _timer = setTimeout(_tick, next);
+  };
+
+  return {
+    start() {
+      if (_active) return;
+      _active = true;
+      _timer  = setTimeout(_tick, baseMs * _battery.multiplier);
+    },
+    stop() {
+      _active = false;
+      if (_timer) { clearTimeout(_timer); _timer = null; }
+    },
+    updateRate() {
+      // Called externally to force a rate recalculation
+      if (_active && _timer) {
+        clearTimeout(_timer);
+        _timer = setTimeout(_tick, baseMs * _battery.multiplier);
+      }
+    },
+    getStatus() {
+      return {
+        active:      _active,
+        baseMs,
+        currentMs:   Math.round(baseMs * _battery.multiplier),
+        tier:        _battery.tier || 'FULL',
+        multiplier:  _battery.multiplier,
+        batteryLevel: Math.round(_battery.level * 100),
+        charging:    _battery.charging,
+      };
+    },
+  };
+}
+
+// Expose battery status for UI/debug
+export function getBatteryThrottleStatus() {
+  return {
+    supported:    _battery.supported,
+    level:        Math.round(_battery.level * 100),
+    charging:     _battery.charging,
+    tier:         _battery.tier || 'FULL',
+    multiplier:   _battery.multiplier,
+  };
+}
+
 export async function initMeta({ db, agentSpeak, runConsensusVote, tuneSemanticWeights, stmPush, stmAll }) {
+  // Timer references for battery-controlled throttled intervals
+  let _stateConsolidationTimer = null;
+  let _validationTimer         = null;
+
+  // Start battery monitor (async, non-blocking)
+  _initBatteryMonitor();
+
 
   // ── 1. Bind cross-module references ───────────────────────────────────
   _db                  = db;
@@ -1485,16 +1612,18 @@ export async function initMeta({ db, agentSpeak, runConsensusVote, tuneSemanticW
   }
 
   // ── 6. Start background meta-tick ─────────────────────────────────────
-  _metaTimers.metaTick = setInterval(async () => {
+  _metaTimers.metaTick = _stateConsolidationTimer = _throttledInterval(async () => {
     if (_sovereignFrozen) return;
     await _runStateConsolidation();
   }, META_TICK_MS);
+  _stateConsolidationTimer.start();
 
   // ── 7. Start background weight validation cycle ────────────────────────
-  _metaTimers.validation = setInterval(async () => {
+  _metaTimers.validation = _validationTimer = _throttledInterval(async () => {
     if (_sovereignFrozen) return;
     await _runValidationCycle();
   }, VALIDATION_TICK_MS);
+  _validationTimer.start();
 
   // ── 8. Start Blob URL GC ───────────────────────────────────────────────
   _metaTimers.blobGC = setInterval(_gcBlobURLs, BLOB_GC_INTERVAL_MS);

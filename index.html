@@ -2153,6 +2153,18 @@ select.ifield   { cursor: pointer; }
         <input type="password" class="ifield mono" id="login-privkey" placeholder="your-private-key-base64..."/>
       </div>
       <button class="btn btn-g w100" onclick="doLogin()">⬡ AUTHENTICATE</button>
+
+    <!-- ETH Wallet Login -->
+    <div style="display:flex;align-items:center;gap:0.5rem;margin:0.4rem 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:0.58rem;color:var(--txt-dim);font-family:var(--font-data)">OR</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button class="btn btn-ghost w100" id="eth-connect-btn" onclick="window._connectEthWalletToMIR()" style="display:flex;align-items:center;justify-content:center;gap:0.5rem">
+      <span style="font-size:0.9rem">⟠</span>
+      <span>CONNECT ETH WALLET</span>
+    </button>
+    <div id="eth-wallet-status" style="font-size:0.6rem;color:var(--txt-dim);text-align:center;display:none"></div>
     </div>
     <div class="tab-pane" id="auth-register">
       <div class="form-group">
@@ -2616,6 +2628,34 @@ async function bootstrapApplication() {
     window.injectHelpHUD();
     console.log('[BOOT] Help HUD injected');
   }
+
+  // ── Feature modules — lazy loaded after boot ────────────────────────────
+  // Analytics Charts
+  try {
+    const chartsURL = _resolve('analytics_charts.js');
+    const Charts    = await import(chartsURL);
+    window._mirCharts = Charts;
+    // Initial agent chart render
+    if (window._MIR_DB) {
+      requestAnimationFrame(() => Charts.initAgentCharts(window._MIR_DB));
+    }
+    // Live update on synthesis complete
+    window.addEventListener('mir:synthesis_complete', () => {
+      if (window._MIR_DB) Charts.updateAgentCharts(window._MIR_DB);
+    });
+    window.addEventListener('mir:ready', () => {
+      if (window._MIR_DB) Charts.initAgentCharts(window._MIR_DB);
+    });
+    console.log('[BOOT] Analytics charts ready');
+  } catch (e) { console.warn('[BOOT] analytics_charts.js:', e.message); }
+
+  // API Console
+  try {
+    const consoleURL = _resolve('api_console.js');
+    const APIConsole = await import(consoleURL);
+    APIConsole.initAPIConsole();
+    console.log('[BOOT] API console ready');
+  } catch (e) { console.warn('[BOOT] api_console.js:', e.message); }
 
   // ── Welcome Overlay — lazy-loaded, shown only on first visit ──────────
   try {
@@ -3715,6 +3755,62 @@ window.injectHelpHUD = (function () {
     console.log('[HELP] HUD injected, lang:', _lang);
   };
 })();
+</script>
+
+
+<script>
+// ── ETH Wallet → MIR Identity binding handler ────────────────────────────
+window._connectEthWalletToMIR = async function () {
+  const statusEl = document.getElementById('eth-wallet-status');
+  const btn      = document.getElementById('eth-connect-btn');
+  const show = (msg, colour) => {
+    if (statusEl) { statusEl.textContent = msg; statusEl.style.color = colour || 'var(--txt-dim)'; statusEl.style.display = 'block'; }
+  };
+  const kdf = window._mirKDF;
+  if (!kdf?.isEthWalletAvailable?.()) {
+    show('No Ethereum wallet detected. Install MetaMask or a compatible browser wallet.', 'var(--crimson)');
+    return;
+  }
+  if (btn) btn.disabled = true;
+  show('Connecting wallet...', 'var(--amber)');
+  try {
+    const address = await kdf.connectEthWallet();
+    if (!address) { show('Wallet connection cancelled.', 'var(--crimson)'); return; }
+    show(`Connected: ${address.slice(0,6)}...${address.slice(-4)} — Sign to link identity...`, 'var(--cyan)');
+
+    // Check if user has an existing MIR sovereign key
+    const ses = window._MIR_SES;
+    const localKey = kdf.loadKeyLocally?.();
+    const mirPubKey = ses?.pubKey || localKey?.pubKey;
+    if (!mirPubKey) {
+      show('No MIR identity found. Register first, then link your wallet.', 'var(--amber)');
+      return;
+    }
+
+    const binding = await kdf.linkEthToSovereign(mirPubKey);
+    if (!binding) { show('Signing cancelled or failed.', 'var(--crimson)'); return; }
+
+    const chain = kdf.getEthChainName?.(binding.chainId) || '';
+    show(`✓ Linked: ${address.slice(0,6)}...${address.slice(-4)} ↔ MIR ${mirPubKey.slice(0,8)}... ${chain ? '(' + chain + ')' : ''}`, 'var(--green)');
+
+    // Publish binding to CRDT if connected
+    const crdt = window._mirCRDT || window.MeshCRDT;
+    if (crdt?.applySovereignDelta) {
+      await crdt.applySovereignDelta({ [`eth_bindings.${binding.ethAddress}`]: binding });
+    } else if (window._MIR_DB) {
+      if (!window._MIR_DB.ethBindings) window._MIR_DB.ethBindings = {};
+      window._MIR_DB.ethBindings[binding.ethAddress] = binding;
+    }
+
+    setTimeout(() => {
+      if (window.closeModal) window.closeModal('auth-modal');
+    }, 1800);
+  } catch (err) {
+    show('Error: ' + err.message, 'var(--crimson)');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
 </script>
 
 </html>

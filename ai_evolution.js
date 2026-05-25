@@ -125,6 +125,16 @@ let _DB = null, _SES = null, _KDF = null, _Meta = null, _Mesh = null, _CRDT = nu
     clearKeyLocally:       _KDF.clearKeyLocally,
     exportEncryptedBackup: _KDF.exportEncryptedBackup,
     importEncryptedBackup: _KDF.importEncryptedBackup,
+    // Web3 Ethereum wallet
+    isEthWalletAvailable:  _KDF.isEthWalletAvailable,
+    connectEthWallet:      _KDF.connectEthWallet,
+    getEthAccount:         _KDF.getEthAccount,
+    signWithEthWallet:     _KDF.signWithEthWallet,
+    linkEthToSovereign:    _KDF.linkEthToSovereign,
+    getLinkedEthBinding:   _KDF.getLinkedEthBinding,
+    verifyEthBinding:      _KDF.verifyEthBinding,
+    clearEthBinding:       _KDF.clearEthBinding,
+    getEthChainName:       _KDF.getEthChainName,
   };
 let _STM = {}, _timers = {};
 let _sovereignFrozen = false, _sovereignOverrideActive = false;
