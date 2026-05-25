@@ -2011,6 +2011,22 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
   _CRDT = CRDT;
   _Meta = Meta;
 
+  // ── Expose _mirMeta bridge for support_agent.js and welcome_overlay.js ──
+  // runExternalQuery() wraps _callClaude() so any module can call the AI
+  // pipeline without importing ai_evolution.js directly.
+  window._mirMeta = {
+    runExternalQuery: async (systemPrompt, userQuery, maxTokens = 280) => {
+      return await _callClaude(systemPrompt, userQuery, maxTokens);
+    },
+    getAgentWeights: (agentId) => {
+      return _DB?.agents?.[agentId]?.semanticWeights || null;
+    },
+    getAgentFRS: (agentId) => {
+      return _DB?.agents?.[agentId]?.frs || 50;
+    },
+    isReady: () => !!_DB,
+  };
+
   // ── 2. Load / restore DB (IDB ghost snapshot → localStorage → fresh) ──
   _DB = _loadDB(snap);
   window._MIR_DB      = _DB;
