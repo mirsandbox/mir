@@ -2954,6 +2954,324 @@ document.addEventListener('keydown', (e) => {
 
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIEW RENDERERS
+// Called by ai_evolution.js via window.renderFeed(), window.renderScenarios()
+// etc. Also triggered by the mir:viewchange event from setView().
+// All helpers (_escH, _fmt2) duplicated here to keep this block self-contained.
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initViewRenderers() {
+  'use strict';
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const _esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const _fmt2 = v => (v / 100_000_000).toFixed(2);
+  const _fmt8 = v => (v / 100_000_000).toFixed(8);
+  const _el   = id => document.getElementById(id);
+  const _setText = (id, val) => { const e = _el(id); if (e) e.textContent = val; };
+  const _setHTML = (id, val) => { const e = _el(id); if (e) e.innerHTML = val; };
+  const _timeAgo = ts => {
+    if (!ts) return '';
+    const d = Math.floor((Date.now() - ts) / 60000);
+    if (d < 1) return 'just now';
+    if (d < 60) return d + 'm ago';
+    if (d < 1440) return Math.floor(d/60) + 'h ago';
+    return Math.floor(d/1440) + 'd ago';
+  };
+  const _riskBadge = prob =>
+    prob >= 70 ? `<span class="tbadge tbadge-r">${prob}%</span>`
+  : prob >= 40 ? `<span class="tbadge tbadge-y">${prob}%</span>`
+  :              `<span class="tbadge tbadge-g">${prob}%</span>`;
+
+  // ── Feed Renderer ─────────────────────────────────────────────────────────
+  window.renderFeed = function renderFeed() {
+    const container = _el('feed-container');
+    if (!container) return;
+    const data = window.getFeedData ? window.getFeedData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-feed', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No intelligence items yet. Be the first to submit.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice().reverse().slice(0, 80).forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      const upvotes  = item.upvotes || 0;
+      const prob     = item.credibility || item.prob || 0;
+      const tagHtml  = (item.tags || []).map(t =>
+        `<span class="tbadge" style="background:rgba(0,212,255,0.06);color:var(--txt-dim);margin-right:0.25rem">${_esc(t)}</span>`
+      ).join('');
+      card.innerHTML = [
+        '<div class="card-hd">',
+          '<div>',
+            `<div class="card-title">${_esc(item.headline || item.title || '')}</div>`,
+            `<div class="card-sub" style="margin-top:0.2rem">${_esc(item.body || item.analysis || '')}</div>`,
+          '</div>',
+          `<span class="tbadge tbadge-g" style="white-space:nowrap">▲ ${upvotes}</span>`,
+        '</div>',
+        tagHtml ? `<div style="margin-top:0.35rem">${tagHtml}</div>` : '',
+        `<div style="display:flex;gap:0.75rem;margin-top:0.4rem;font-size:0.6rem;color:var(--txt-dim)">`,
+          `<span>${_esc(item.author || item.authorId || 'anonymous')}</span>`,
+          `<span>${_timeAgo(item.ts || item.timestamp)}</span>`,
+          item.frs ? `<span>FRS ${item.frs}</span>` : '',
+          `<button onclick="window.upvoteIntel&&window.upvoteIntel('${_esc(item.id||'')}',this)" `,
+            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.35rem;font-size:0.6rem;color:var(--txt-dim);cursor:pointer">▲ Upvote</button>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── Scenario Renderer ─────────────────────────────────────────────────────
+  window.renderScenarios = function renderScenarios() {
+    const container = _el('scenarios-container');
+    if (!container) return;
+    const data = window.getScenariosData ? window.getScenariosData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-scenarios', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No scenarios yet. Create the first one.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice(0, 60).forEach(s => {
+      const prob = s.adminOverride ? (s.adminOverrideValue ?? s.consensusProb) : (s.consensusProb || s.probability || 50);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      card.dataset.scenarioId = s.id || '';
+      card.innerHTML = [
+        '<div class="card-hd">',
+          '<div>',
+            `<div class="card-title">${_esc(s.title || '')}`,
+              s.adminOverride ? ' <span class="tbadge tbadge-gd">OVERRIDE</span>' : '',
+            '</div>',
+            `<div class="card-sub">${_esc(s.desc || s.description || '')}</div>`,
+          '</div>',
+          _riskBadge(prob),
+        '</div>',
+        `<div class="pbar mb1"><div class="pbar-fill g" id="scen-bar-${(s.id||'').slice(0,8)}" style="width:${prob}%"></div></div>`,
+        `<div style="display:flex;gap:0.5rem;font-size:0.62rem;color:var(--txt-dim);margin-bottom:0.4rem">`,
+          `<span style="color:var(--amber)">Macro: ${((s.aiWeights?.macro||0.33)*100).toFixed(0)}%</span>`,
+          `<span style="color:var(--crimson)">Cyber: ${((s.aiWeights?.cyber||0.33)*100).toFixed(0)}%</span>`,
+          `<span style="color:var(--green)">Geo: ${((s.aiWeights?.geo||0.34)*100).toFixed(0)}%</span>`,
+        '</div>',
+        s.adminOverride
+          ? `<div style="font-size:0.62rem;color:var(--amber)">Locked by sovereign override.</div>`
+          : `<input type="range" min="1" max="99" value="${prob}" `,
+            `oninput="window._mirScenProb&&window._mirScenProb('${s.id||''}',this.value)" `,
+            `style="width:100%;accent-color:var(--green);margin-bottom:0.4rem">`,
+        `<div style="display:flex;align-items:center;gap:0.75rem;font-size:0.62rem;color:var(--txt-dim)">`,
+          `<span>Horizon: ${s.horizon||0}d</span>`,
+          `<span>by ${_esc(s.author||'')}</span>`,
+          `<button onclick="window.upvoteScenario&&window.upvoteScenario('${s.id||''}')" `,
+            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.38rem;font-size:0.62rem;color:var(--txt-dim);cursor:pointer">▲ ${s.upvotes||0}</button>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── Prediction Markets Renderer ───────────────────────────────────────────
+  window.renderPredictions = function renderPredictions() {
+    const container = _el('predictions-container');
+    if (!container) return;
+    const data = window.getPredictionsData ? window.getPredictionsData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-predictions', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No prediction markets open.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice(0, 40).forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      const probA = p.probA || 50;
+      const probB = 100 - probA;
+      card.innerHTML = [
+        `<div class="card-title">${_esc(p.question || p.title || '')}</div>`,
+        `<div class="card-sub" style="margin-bottom:0.5rem">Resolves: ${p.resolutionDate ? new Date(p.resolutionDate).toLocaleDateString() : '—'}</div>`,
+        '<div class="pbar" style="height:12px;margin-bottom:0.4rem">',
+          `<div style="width:${probA}%;height:100%;background:var(--green);border-radius:3px 0 0 3px;display:inline-block;transition:width 0.3s"></div>`,
+          `<div style="width:${probB}%;height:100%;background:var(--crimson);display:inline-block;transition:width 0.3s"></div>`,
+        '</div>',
+        `<div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--txt-dim)">`,
+          `<span style="color:var(--green)">${_esc(p.optionA||'YES')} ${probA}%</span>`,
+          `<span style="color:var(--crimson)">${_esc(p.optionB||'NO')} ${probB}%</span>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── OTC Market Renderer ───────────────────────────────────────────────────
+  window.renderMarket = function renderMarket() {
+    const data    = window.getOTCData ? window.getOTCData() : [];
+    const orders  = Array.isArray(data) ? data : (data.orders || []);
+    const sellEl  = _el('otc-sell-orders');
+    const buyEl   = _el('otc-buy-orders');
+    const sells   = orders.filter(o => o.type === 'sell' && o.status === 'open');
+    const buys    = orders.filter(o => o.type === 'buy'  && o.status === 'open');
+    const buildList = (list, isSell) => {
+      if (!list.length) return '<div class="tdim txs" style="padding:1rem;text-align:center">No open ' + (isSell ? 'sell' : 'buy') + ' orders.</div>';
+      return list.slice(0,20).map(o => [
+        '<div class="card" style="margin-bottom:0.5rem">',
+          '<div class="card-hd">',
+            `<div><div class="card-title">${_fmt2(o.amountMIRI||o.amount||0)} MIR</div>`,
+            `<div class="card-sub">${o.pricePerMIR||'—'} USDT/MIR · ${_esc(o.seller||o.sellerUsername||o.pubKey?.slice(0,8)||'—')}</div></div>`,
+            isSell
+              ? `<button onclick="window.createBuyOrder&&window.createBuyOrder('${o.id||''}')" class="nbtn" style="font-size:0.6rem">BUY</button>`
+              : `<button onclick="window.createSellOrder&&window.createSellOrder('${o.id||''}')" class="nbtn" style="font-size:0.6rem">SELL</button>`,
+          '</div></div>',
+      ].join('')).join('');
+    };
+    if (sellEl) sellEl.innerHTML = buildList(sells, true);
+    if (buyEl)  buyEl.innerHTML  = buildList(buys, false);
+  };
+
+  // ── Ledger Renderer ───────────────────────────────────────────────────────
+  window.renderLedger = function renderLedger() {
+    const container = _el('ledger-container');
+    if (!container) return;
+    const data = window.getTxData ? window.getTxData() : [];
+    const txs  = Array.isArray(data) ? data : [];
+    if (!txs.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No transactions yet.</div>';
+      return;
+    }
+    const rows = txs.slice().reverse().slice(0,100).map(tx => [
+      '<div class="card" style="margin-bottom:0.45rem">',
+        '<div class="card-hd" style="gap:0.5rem">',
+          `<div style="font-size:0.62rem;color:var(--txt-dim)">${_esc(tx.type||'tx')}</div>`,
+          `<div style="font-size:0.68rem;color:${(tx.amount||0)>0?'var(--green)':'var(--crimson)'}">`,
+            `${(tx.amount||0)>0?'+':''}${_fmt8(tx.amount||0)} MIR`,
+          '</div>',
+          `<div style="font-size:0.6rem;color:var(--txt-dim)">${_timeAgo(tx.timestamp||tx.ts)}</div>`,
+        '</div>',
+        tx.memo ? `<div class="card-sub">${_esc(tx.memo)}</div>` : '',
+      '</div>',
+    ].join('')).join('');
+    container.innerHTML = rows;
+  };
+
+  // ── Leaderboard Renderer ──────────────────────────────────────────────────
+  window.renderLeaderboard = function renderLeaderboard() {
+    const container = _el('leaderboard-container');
+    if (!container) return;
+    const db = window._MIR_DB;
+    if (!db) { container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">Loading...</div>'; return; }
+    const wallets  = Object.entries(db.wallets || {});
+    const accounts = Object.entries(db.accounts || {});
+    const entries  = (wallets.length ? wallets : accounts)
+      .map(([pk, w]) => ({ pk, username: w.username || pk.slice(0,8), frs: w.frs || 0, balance: w.balance || 0 }))
+      .sort((a,b) => b.frs - a.frs)
+      .slice(0, 50);
+    if (!entries.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No ranked users yet.</div>';
+      return;
+    }
+    const rows = entries.map((e, i) => [
+      '<div class="card" style="margin-bottom:0.45rem">',
+        '<div class="card-hd">',
+          `<div style="display:flex;align-items:center;gap:0.6rem">`,
+            `<span style="font-family:var(--font-hud);font-size:0.6rem;color:var(--txt-dim);min-width:1.5rem">#${i+1}</span>`,
+            `<div><div class="card-title">${_esc(e.username)}</div>`,
+            `<div class="card-sub">${e.pk.slice(0,16)}...</div></div>`,
+          '</div>',
+          `<div style="text-align:right"><div style="color:var(--cyan);font-size:0.68rem">FRS ${e.frs}</div>`,
+            `<div class="card-sub">${_fmt2(e.balance)} MIR</div></div>`,
+        '</div>',
+      '</div>',
+    ].join('')).join('');
+    container.innerHTML = rows;
+  };
+
+  // ── Tokenomics Renderer ───────────────────────────────────────────────────
+  window.renderTokenomics = function renderTokenomics() {
+    const container = _el('tokenomics-container');
+    if (!container) return;
+    const t = window.getTokenomicsData ? window.getTokenomicsData() : {};
+    const maxS = 2_100_000_00000000;
+    const circ = t.circulatingSupply || 0;
+    const burn = t.burned            || 0;
+    const pool = t.networkPool       || 0;
+    const pct  = v => ((v/maxS)*100).toFixed(4);
+    container.innerHTML = [
+      '<div class="card" style="margin-bottom:0.7rem">',
+        '<div class="card-title" style="margin-bottom:0.7rem">Supply Distribution</div>',
+        `<div style="margin-bottom:0.5rem"><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Circulating</span><span style="color:var(--cyan)">${_fmt2(circ)} MIR (${pct(circ)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill" style="width:${pct(circ)}%;background:var(--cyan)"></div></div></div>`,
+        `<div style="margin-bottom:0.5rem"><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Burned (permanent)</span><span style="color:var(--crimson)">${_fmt2(burn)} MIR (${pct(burn)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill r" style="width:${pct(burn)}%"></div></div></div>`,
+        `<div><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Network Rewards Pool</span><span style="color:var(--green)">${_fmt2(pool)} MIR (${pct(pool)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill g" style="width:${pct(pool)}%"></div></div></div>`,
+      '</div>',
+      '<div class="card">',
+        '<div class="card-title" style="margin-bottom:0.6rem">Protocol Constants</div>',
+        `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.65rem">`,
+          `<div style="color:var(--txt-dim)">Max Supply</div><div style="color:var(--txt-sec)">2,100,000.00000000 MIR</div>`,
+          `<div style="color:var(--txt-dim)">Burn Rate</div><div style="color:var(--crimson)">2% per upvote</div>`,
+          `<div style="color:var(--txt-dim)">OTC Fee (AI)</div><div style="color:var(--amber)">10% → Rewards Pool</div>`,
+          `<div style="color:var(--txt-dim)">Mining Epochs</div><div style="color:var(--green)">11 × 3yr (2025–2058)</div>`,
+          `<div style="color:var(--txt-dim)">Total Upvotes</div><div style="color:var(--txt-sec)">${t.totalUpvotes||0}</div>`,
+          `<div style="color:var(--txt-dim)">Total Burns</div><div style="color:var(--txt-sec)">${t.totalBurns||0}</div>`,
+        '</div>',
+      '</div>',
+    ].join('');
+  };
+
+  // ── mir:viewchange dispatcher ─────────────────────────────────────────────
+  window.addEventListener('mir:viewchange', e => {
+    const view = e.detail?.view;
+    requestAnimationFrame(() => {
+      const renderers = {
+        feed:        window.renderFeed,
+        scenarios:   window.renderScenarios,
+        predictions: window.renderPredictions,
+        market:      window.renderMarket,
+        ledger:      window.renderLedger,
+        leaderboard: window.renderLeaderboard,
+        tokenomics:  window.renderTokenomics,
+        cognitive:   typeof renderCognitive === 'function' ? renderCognitive : null,
+      };
+      if (view && renderers[view]) renderers[view]();
+    });
+  });
+
+  // ── mir:ready — initial render after DB loads ─────────────────────────────
+  window.addEventListener('mir:ready', () => {
+    requestAnimationFrame(() => {
+      window.renderFeed        && window.renderFeed();
+      window.renderScenarios   && window.renderScenarios();
+      window.renderPredictions && window.renderPredictions();
+      window.renderMarket      && window.renderMarket();
+      window.renderLedger      && window.renderLedger();
+      window.renderLeaderboard && window.renderLeaderboard();
+      window.renderTokenomics  && window.renderTokenomics();
+    });
+  });
+
+  // ── mir:synthesis_complete — live updates ─────────────────────────────────
+  window.addEventListener('mir:synthesis_complete', () => {
+    requestAnimationFrame(() => {
+      window.renderScenarios   && window.renderScenarios();
+      window.renderLeaderboard && window.renderLeaderboard();
+      window.renderTokenomics  && window.renderTokenomics();
+    });
+  });
+
+})();
+
 </script>
 
 
