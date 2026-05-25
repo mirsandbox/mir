@@ -117,6 +117,15 @@ const OSINT_SYNTHETIC_FEED = [
 
 // ── Module State ──────────────────────────────────────────────────────────
 let _DB = null, _SES = null, _KDF = null, _Meta = null, _Mesh = null, _CRDT = null;
+  // Expose new identity management functions for HTML onclick handlers
+  window._mirKDF = {
+    generateIdentity:      _KDF.generateIdentity      || _KDF.generateED25519,
+    saveKeyLocally:        _KDF.saveKeyLocally,
+    loadKeyLocally:        _KDF.loadKeyLocally,
+    clearKeyLocally:       _KDF.clearKeyLocally,
+    exportEncryptedBackup: _KDF.exportEncryptedBackup,
+    importEncryptedBackup: _KDF.importEncryptedBackup,
+  };
 let _STM = {}, _timers = {};
 let _sovereignFrozen = false, _sovereignOverrideActive = false;
 let _osintFeedIndex = 0, _dreamActive = false, _dreamCancel = false;
@@ -1114,6 +1123,30 @@ export async function generateKeypair() {
 
 export async function exportKeys() {
   if (!_SES) { toast('Not connected','error'); return; }
+
+  // Offer encrypted backup if KDF module supports it
+  if (_KDF && typeof _KDF.exportEncryptedBackup === 'function') {
+    const useEncrypted = window.confirm(
+      'Export ENCRYPTED backup (.json)? You will set a password.\n\n' +
+      'Click OK for encrypted .json (recommended)\n' +
+      'Click Cancel for plain text .txt (less secure)'
+    );
+    if (useEncrypted) {
+      const pw = window.prompt('Set a backup password (min 8 chars):');
+      if (pw && pw.length >= 8) {
+        const ok = await _KDF.exportEncryptedBackup(
+          _SES.privKeyB64, _SES.pubKey, _SES.username, pw
+        );
+        if (ok) { toast('Encrypted backup downloaded ✓', 'success'); return; }
+      } else if (pw !== null) {
+        toast('Password too short — falling back to plain export', 'warn');
+      } else {
+        return; // user cancelled
+      }
+    }
+  }
+
+  // Plain text fallback
   const data = [
     'MIR Platform Keypair Export',
     '========================',
@@ -1155,12 +1188,22 @@ export async function doRegister() {
   markDirty();
 
   _SES = {
-    pubKey: _pendingKeypair.pubKey,
+    pubKey:     _pendingKeypair.pubKey,
     privKeyB64: _pendingKeypair.privKeyB64,
-    username, algo: _pendingKeypair.algo,
+    username,
+    algo:       _pendingKeypair.algo,
   };
   try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(_SES)); } catch {}
   window._MIR_SES = _SES;
+
+  // Identity Partition: save key to localStorage for session restore
+  // Each pubKey is its own sovereign identity partition in IDB.
+  // If a user loses their key and re-registers, the new identity
+  // cannot access old data — non-custodial by design.
+  if (_KDF && typeof _KDF.saveKeyLocally === 'function') {
+    _KDF.saveKeyLocally(_pendingKeypair.privKeyB64, _pendingKeypair.pubKey, username);
+  }
+
   _pendingKeypair = null;
 
   _renderNavbar();

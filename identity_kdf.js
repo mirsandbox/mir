@@ -858,3 +858,210 @@ export {
   strToBytes,
   timingSafeEqual,
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SOVEREIGN IDENTITY MANAGEMENT
+// generateIdentity(), saveKeyLocally(), exportEncryptedBackup()
+// ═══════════════════════════════════════════════════════════════════════════
+
+const IDENTITY_LS_KEY        = 'mir_identity_v2';
+const IDENTITY_BACKUP_SALT   = 'MIR-IDENTITY-BACKUP-V2';
+const IDENTITY_PBKDF2_ITERS  = 150_000;
+
+/**
+ * generateIdentity()
+ * Public-facing alias for generateED25519().
+ * Returns a new sovereign identity keypair for this browser session.
+ * No keys are stored — caller must invoke saveKeyLocally() explicitly.
+ *
+ * @returns {Promise<{ pubKey: string, privKeyB64: string, algo: string, createdAt: number }>}
+ */
+export async function generateIdentity() {
+  const kp = await generateED25519();
+  return { ...kp, createdAt: Date.now(), platform: 'MIR-V2' };
+}
+
+/**
+ * saveKeyLocally(privKeyB64, pubKey, username)
+ * Stores the identity keypair in localStorage under IDENTITY_LS_KEY.
+ * The private key is stored as-is (user is responsible for device security).
+ * For hardened storage, call exportEncryptedBackup() and delete the plaintext.
+ *
+ * Storage format: { pubKey, privKeyB64, username, algo, savedAt }
+ * Key:            localStorage['mir_identity_v2']
+ *
+ * @param {string} privKeyB64  — Base64 private key
+ * @param {string} pubKey      — Hex public key
+ * @param {string} [username]  — Optional display label
+ * @returns {boolean} true if saved successfully
+ */
+export function saveKeyLocally(privKeyB64, pubKey, username = '') {
+  try {
+    const record = JSON.stringify({
+      pubKey,
+      privKeyB64,
+      username,
+      savedAt:  Date.now(),
+      platform: 'MIR-V2',
+    });
+    localStorage.setItem(IDENTITY_LS_KEY, record);
+    return true;
+  } catch (e) {
+    console.warn('[KDF] saveKeyLocally failed:', e.message);
+    return false;
+  }
+}
+
+/**
+ * loadKeyLocally()
+ * Reads the stored identity from localStorage.
+ * Returns null if no identity is stored.
+ *
+ * @returns {{ pubKey, privKeyB64, username, savedAt } | null}
+ */
+export function loadKeyLocally() {
+  try {
+    const raw = localStorage.getItem(IDENTITY_LS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+/**
+ * clearKeyLocally()
+ * Removes the stored identity from localStorage.
+ * Called on logout or voluntary key rotation.
+ */
+export function clearKeyLocally() {
+  localStorage.removeItem(IDENTITY_LS_KEY);
+}
+
+/**
+ * exportEncryptedBackup(privKeyB64, pubKey, username, password)
+ * Encrypts the keypair with AES-256-GCM using a user-chosen password
+ * and triggers a browser download of a .json backup file.
+ *
+ * Encryption:
+ *   key = PBKDF2(password, randomSalt, 150_000 iters, SHA-256) → 32 bytes
+ *   iv  = random 12 bytes
+ *   ciphertext = AES-256-GCM(key, iv, plaintext)
+ *
+ * The output file is safe to store in cloud services — decryption requires
+ * the password AND the file. The private key is never stored in plaintext.
+ *
+ * @param {string} privKeyB64  — Base64 private key to encrypt
+ * @param {string} pubKey      — Hex public key (stored unencrypted for identification)
+ * @param {string} username    — Display name
+ * @param {string} password    — Encryption passphrase (never stored)
+ * @returns {Promise<boolean>}
+ */
+export async function exportEncryptedBackup(privKeyB64, pubKey, username, password) {
+  try {
+    if (!password || password.length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+
+    await _probeCapabilities();
+    const sc = window.crypto.subtle;
+
+    // Generate random salt and IV
+    const salt = crypto.getRandomValues(new Uint8Array(32));
+    const iv   = crypto.getRandomValues(new Uint8Array(12));
+
+    // Derive encryption key via PBKDF2
+    const pwBytes = strToBytes(password);
+    const baseKey = await sc.importKey('raw', pwBytes, 'PBKDF2', false, ['deriveKey']);
+    const aesKey  = await sc.deriveKey(
+      { name: 'PBKDF2', salt, iterations: IDENTITY_PBKDF2_ITERS, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt']
+    );
+
+    // Plaintext payload
+    const plaintext = strToBytes(JSON.stringify({
+      privKeyB64,
+      pubKey,
+      username,
+      platform: 'MIR-V2',
+      exportedAt: Date.now(),
+    }));
+
+    // Encrypt
+    const ciphertext = await sc.encrypt({ name: 'AES-GCM', iv }, aesKey, plaintext);
+
+    // Build backup file
+    const backup = {
+      version:    'MIR-IDENTITY-BACKUP-V2',
+      pubKey,                                           // unencrypted — safe to store
+      username,
+      algo:       'AES-256-GCM / PBKDF2-SHA-256',
+      iterations: IDENTITY_PBKDF2_ITERS,
+      salt:       bufToHex(salt),
+      iv:         bufToHex(iv),
+      ciphertext: bufToHex(new Uint8Array(ciphertext)),
+      createdAt:  Date.now(),
+      warning:    'This file is encrypted. You MUST remember your password. There is NO recovery if you forget it.',
+    };
+
+    // Download
+    const blob  = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href      = url;
+    a.download  = `mir_identity_backup_${(username || pubKey.slice(0,8))}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (err) {
+    console.error('[KDF] exportEncryptedBackup error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * importEncryptedBackup(backupJson, password)
+ * Decrypts a backup file and returns the keypair.
+ * Does NOT automatically save to localStorage — caller must invoke saveKeyLocally().
+ *
+ * @param {string|Object} backupJson — Backup file contents (string or parsed)
+ * @param {string}         password  — Decryption passphrase
+ * @returns {Promise<{ pubKey, privKeyB64, username } | null>}
+ */
+export async function importEncryptedBackup(backupJson, password) {
+  try {
+    const backup = typeof backupJson === 'string' ? JSON.parse(backupJson) : backupJson;
+    if (backup.version !== 'MIR-IDENTITY-BACKUP-V2') {
+      throw new Error('Unrecognised backup format');
+    }
+
+    await _probeCapabilities();
+    const sc = window.crypto.subtle;
+
+    const salt       = hexToBytes(backup.salt);
+    const iv         = hexToBytes(backup.iv);
+    const ciphertext = hexToBytes(backup.ciphertext);
+    const pwBytes    = strToBytes(password);
+
+    // Derive decryption key
+    const baseKey = await sc.importKey('raw', pwBytes, 'PBKDF2', false, ['deriveKey']);
+    const aesKey  = await sc.deriveKey(
+      { name: 'PBKDF2', salt, iterations: backup.iterations || IDENTITY_PBKDF2_ITERS, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+
+    // Decrypt
+    const plaintext = await sc.decrypt({ name: 'AES-GCM', iv }, aesKey, ciphertext);
+    const decoded   = JSON.parse(new TextDecoder().decode(plaintext));
+    return { pubKey: decoded.pubKey, privKeyB64: decoded.privKeyB64, username: decoded.username };
+  } catch (err) {
+    console.warn('[KDF] importEncryptedBackup failed:', err.message);
+    return null;
+  }
+}

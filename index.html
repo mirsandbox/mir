@@ -1113,6 +1113,131 @@ select.ifield   { cursor: pointer; }
   #topbar { padding: 0 0.6rem; }
   #main { padding: 0.8rem; }
 }
+
+/* ── Welcome Onboarding Overlay ─────────────────────────────────────────── */
+#welcome-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3,7,18,0.96);
+  backdrop-filter: blur(8px);
+}
+#welcome-overlay.open { display: flex; }
+.welcome-panel {
+  width: min(560px, 94vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--void,#050c1a);
+  border: 1px solid var(--cyan,#00d4ff);
+  border-radius: 4px;
+  padding: 2rem 1.8rem 1.5rem;
+  box-shadow: 0 0 60px rgba(0,212,255,0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.welcome-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.82rem;
+  color: var(--cyan,#00d4ff);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-deep,#0f1829);
+  padding-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.welcome-title::before { content:'⬡'; color:var(--green,#00ff88); }
+.welcome-step {
+  display: none;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.welcome-step.active { display: flex; }
+.welcome-step-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.7rem;
+  color: var(--green,#00ff88);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.welcome-text {
+  font-family: var(--font-data,'Rajdhani',monospace);
+  font-size: 0.78rem;
+  color: var(--txt-sec,#8ba3cc);
+  line-height: 1.65;
+}
+.welcome-card {
+  background: rgba(0,212,255,0.04);
+  border: 1px solid var(--border,#1a2535);
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+}
+.welcome-card-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+.welcome-card.pub .welcome-card-title  { color: var(--green,#00ff88); }
+.welcome-card.priv .welcome-card-title { color: var(--crimson,#ff2244); }
+.welcome-warning {
+  background: rgba(255,34,68,0.07);
+  border: 1px solid var(--crimson,#ff2244);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-data,'Rajdhani',monospace);
+  font-size: 0.72rem;
+  color: var(--crimson,#ff2244);
+  line-height: 1.55;
+}
+.welcome-warning::before { content:'⚠ SECURITY: '; font-weight: 800; }
+.welcome-steps-indicator {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.welcome-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border,#1a2535);
+  transition: background 0.2s;
+}
+.welcome-dot.active { background: var(--cyan,#00d4ff); }
+.welcome-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-deep,#0f1829);
+}
+.welcome-btn {
+  background: rgba(0,212,255,0.1);
+  border: 1px solid var(--cyan,#00d4ff);
+  color: var(--cyan,#00d4ff);
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.welcome-btn:hover { background: rgba(0,212,255,0.2); }
+.welcome-btn.skip {
+  background: transparent;
+  border-color: var(--border,#1a2535);
+  color: var(--txt-dim,#4a6080);
+}
+.welcome-btn.skip:hover { border-color: var(--txt-dim,#4a6080); }
+
 </style>
 </head>
 <body>
@@ -2379,5 +2504,115 @@ document.addEventListener('keydown', (e) => {
 
 </script>
 
+
+<!-- ── Welcome Onboarding Overlay ──────────────────────────────────────── -->
+<div id="welcome-overlay" role="dialog" aria-modal="true" aria-label="Welcome to MIR Platform">
+  <div class="welcome-panel">
+    <div class="welcome-title">Welcome to MIR Platform v2.0</div>
+    <div class="welcome-step active" id="wstep-0">
+      <div class="welcome-step-title">Step 1 of 4 — What is MIR?</div>
+      <div class="welcome-text">MIR is a <strong style="color:var(--cyan)">decentralised sovereign intelligence platform</strong>. Analyse geopolitical scenarios, earn reputation (FRS), mine MIR tokens, and trade peer-to-peer — all without any central server controlling your account.</div>
+      <div class="welcome-text">Your identity is a <strong style="color:var(--green)">cryptographic keypair</strong> generated locally in your browser. No email. No password. No recovery service.</div>
+    </div>
+    <div class="welcome-step" id="wstep-1">
+      <div class="welcome-step-title">Step 2 of 4 — Your Public Key</div>
+      <div class="welcome-card pub">
+        <div class="welcome-card-title">&#x1F513; Public Key = Your Address</div>
+        <div class="welcome-text">Your <strong style="color:var(--green)">public key</strong> is like a bank account number — safe to share with anyone. Others use it to send you MIR and verify your identity.</div>
+      </div>
+      <div class="welcome-text" style="font-size:0.68rem;color:var(--txt-dim)">&#x2713; Share it freely &nbsp;&middot;&nbsp; &#x2713; Receive MIR with it &nbsp;&middot;&nbsp; &#x2713; Post it publicly</div>
+    </div>
+    <div class="welcome-step" id="wstep-2">
+      <div class="welcome-step-title">Step 3 of 4 — Your Private Key</div>
+      <div class="welcome-card priv">
+        <div class="welcome-card-title">&#x1F511; Private Key = Your Permanent Password</div>
+        <div class="welcome-text">Your <strong style="color:var(--crimson)">private key</strong> is the only proof you own your account. Generated once, locally, and never sent anywhere.</div>
+      </div>
+      <div class="welcome-warning">MIR is fully decentralised. If you lose your private key, your account and all funds are permanently and irrecoverably lost. There is no reset, no support, no exception. Write it down or use EXPORT BACKUP immediately after registration.</div>
+    </div>
+    <div class="welcome-step" id="wstep-3">
+      <div class="welcome-step-title">Step 4 of 4 — Lost Your Key?</div>
+      <div class="welcome-text">You can always <strong style="color:var(--amber)">re-register with a new keypair</strong>. Your new identity is a fresh <em>sovereign partition</em> — a completely independent account. Old data tied to the lost key is inaccessible by design.</div>
+      <div class="welcome-text"><strong style="color:var(--green)">Best practice:</strong> After registering, click EXPORT in your wallet and save an encrypted .json backup to an offline device.</div>
+      <div class="welcome-text" style="font-size:0.66rem;color:var(--txt-dim)">This overlay will not appear again after you close it.</div>
+    </div>
+    <div class="welcome-steps-indicator">
+      <div class="welcome-dot active" id="wdot-0"></div>
+      <div class="welcome-dot" id="wdot-1"></div>
+      <div class="welcome-dot" id="wdot-2"></div>
+      <div class="welcome-dot" id="wdot-3"></div>
+    </div>
+    <div class="welcome-nav">
+      <button class="welcome-btn skip" onclick="window._mirWelcome.close()">SKIP INTRO</button>
+      <button class="welcome-btn" id="welcome-next-btn" onclick="window._mirWelcome.next()">NEXT &#x2192;</button>
+    </div>
+  </div>
+</div>
+
 </body>
+
+<script>
+// ── Welcome Onboarding Controller ────────────────────────────────────────
+(function initWelcomeOverlay() {
+  'use strict';
+  const VISITED_KEY = 'mir_onboarding_done_v2';
+  const TOTAL_STEPS = 4;
+  let   _step       = 0;
+
+  window._mirWelcome = {
+    show() {
+      const ov = document.getElementById('welcome-overlay');
+      if (ov) ov.classList.add('open');
+      _goTo(0);
+    },
+    close() {
+      const ov = document.getElementById('welcome-overlay');
+      if (ov) ov.classList.remove('open');
+      try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
+    },
+    next() {
+      if (_step < TOTAL_STEPS - 1) { _goTo(_step + 1); }
+      else { window._mirWelcome.close(); }
+    },
+  };
+
+  function _goTo(n) {
+    _step = n;
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      const st = document.getElementById('wstep-' + i);
+      const dt = document.getElementById('wdot-' + i);
+      if (st) st.classList.toggle('active', i === n);
+      if (dt) dt.classList.toggle('active', i === n);
+    }
+    const btn = document.getElementById('welcome-next-btn');
+    if (btn) btn.textContent = (n === TOTAL_STEPS - 1) ? 'GET STARTED →' : 'NEXT →';
+  }
+
+  // Only show on first visit, after boot overlay clears
+  try {
+    if (!localStorage.getItem(VISITED_KEY)) {
+      const tryShow = () => {
+        const boot = document.getElementById('boot-overlay');
+        if (!boot || boot.classList.contains('hidden')) {
+          window._mirWelcome.show();
+          return;
+        }
+        const obs = new MutationObserver(() => {
+          if (boot.classList.contains('hidden')) {
+            obs.disconnect();
+            setTimeout(() => window._mirWelcome.show(), 350);
+          }
+        });
+        obs.observe(boot, { attributes: true, attributeFilter: ['class'] });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(tryShow, 900));
+      } else {
+        setTimeout(tryShow, 900);
+      }
+    }
+  } catch {}
+})();
+</script>
+
 </html>
