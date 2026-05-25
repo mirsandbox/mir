@@ -2596,6 +2596,38 @@ async function bootstrapApplication() {
   await new Promise(r => setTimeout(r, 400));
   const overlay = document.getElementById('boot-overlay');
   if (overlay) overlay.classList.add('hidden');
+
+  // ── Inject Help HUD after boot overlay clears ─────────────────────────
+  // Wire support_agent.js and activate the ? button + FAB
+  try {
+    const supportURL = _resolve('support_agent.js');
+    const SupportMod = await import(supportURL);
+    window._mirSupport = {
+      askSupport:    SupportMod.askSupport,
+      preloadHelp:   SupportMod.preloadHelp,
+      getCategories: SupportMod.getSupportCategories,
+    };
+    console.log('[BOOT] Support agent ready');
+  } catch (e) {
+    console.warn('[BOOT] Support agent not loaded:', e.message);
+  }
+
+  if (typeof window.injectHelpHUD === 'function') {
+    window.injectHelpHUD();
+    console.log('[BOOT] Help HUD injected');
+  }
+
+  // ── Welcome Overlay — lazy-loaded, shown only on first visit ──────────
+  try {
+    const woURL = _resolve('welcome_overlay.js');
+    const WOMod = await import(woURL);
+    if (typeof WOMod.initWelcomeOverlay === 'function') {
+      WOMod.initWelcomeOverlay();
+      console.log('[BOOT] Welcome overlay ready');
+    }
+  } catch (e) {
+    console.warn('[BOOT] welcome_overlay.js not loaded:', e.message);
+  }
 }
 
 // ── Kick off boot sequence on DOMContentLoaded ─────────────────────────
@@ -3097,169 +3129,192 @@ document.addEventListener('keydown', (e) => {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════
-   HELP HUD CONTROLLER
-   Injected into DOM after Ghost-Render boot. Zero impact on boot sequence.
-   Called from ai_evolution.js via window.injectHelpHUD() once app is ready.
+   HELP HUD CONTROLLER  v2.1
+   Self-contained IIFE. Defines window.injectHelpHUD which is called
+   by bootstrapApplication() after boot completes.
+   Plain <script> runs synchronously during parse → defined before the
+   async module code calls it.
    ═══════════════════════════════════════════════════════════════════════ */
 window.injectHelpHUD = (function () {
   'use strict';
 
-  // ── State ─────────────────────────────────────────────────────────────
+  /* ── State ─────────────────────────────────────────────────────────── */
   let _helpData  = null;
-  let _lang      = 'en';
-  let _cat       = 'dashboard_keys';
   let _loading   = false;
+  let _lang      = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  if (!['en','fa','ar','zh','de'].includes(_lang)) _lang = 'en';
+  let _cat       = 'dashboard_keys';
   let _aiPending = false;
-  const LANGS    = ['en','fa','ar','zh','de'];
 
-  // ── DOM refs ──────────────────────────────────────────────────────────
-  const $  = id => document.getElementById(id);
-  const $$ = sel => document.querySelectorAll(sel);
+  /* ── DOM helpers ───────────────────────────────────────────────────── */
+  const $   = id  => document.getElementById(id);
+  const $$  = sel => document.querySelectorAll(sel);
+  const esc = s   => String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  // ── Escape helper ─────────────────────────────────────────────────────
-  function _esc(s) {
-    return String(s)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
+  /* ── URL resolver (no import.meta.url — plain script context) ───────── */
+  function _resolveURL(filename) {
+    try {
+      const loc = window.location.href;
+      const dir = loc.endsWith('/') ? loc : loc.slice(0, loc.lastIndexOf('/') + 1);
+      return dir + filename;
+    } catch { return './' + filename; }
   }
 
-  // ── Help data loader (lazy) ───────────────────────────────────────────
+  /* ── Lazy help data loader ─────────────────────────────────────────── */
   async function _loadHelpData() {
     if (_helpData) return _helpData;
     if (_loading)  return null;
     _loading = true;
     try {
-      const url = new URL('./help_content.js', import.meta.url).href;
-      const mod = await import(url);
-      _helpData = mod.HELP_DATA || mod.default?.HELP_DATA;
+      const url = _resolveURL('help_content.js');
+      console.log('[HELP] Loading:', url);
+      const mod  = await import(url);
+      _helpData  = mod.HELP_DATA || mod.default?.HELP_DATA || null;
+      if (!_helpData) throw new Error('HELP_DATA not exported');
+      console.log('[HELP] Loaded', Object.keys(_helpData).length, 'categories');
       return _helpData;
     } catch (e) {
-      console.warn('[HELP] help_content.js load failed:', e.message);
+      console.warn('[HELP] help_content.js failed:', e.message);
+      _helpData = null;
       return null;
-    } finally {
-      _loading = false;
-    }
+    } finally { _loading = false; }
   }
 
-  // ── Render a category ─────────────────────────────────────────────────
-  function _renderCategory(catKey, lang) {
-    const data    = _helpData;
-    if (!data) { $('mir-help-content').innerHTML = '<div class="mir-help-thinking">Help data not loaded.</div>'; return; }
-    const catObj  = data[catKey];
-    if (!catObj)  { $('mir-help-content').innerHTML = '<div class="mir-help-thinking">Category not found.</div>'; return; }
-    const safeLang = LANGS.includes(lang) ? lang : 'en';
+  /* ── Category renderer ─────────────────────────────────────────────── */
+  function _render(catKey, lang) {
+    const content = $('mir-help-content');
+    if (!content) return;
+    if (!_helpData) {
+      content.innerHTML = '<div class="mir-help-thinking">Help data unavailable.</div>';
+      return;
+    }
+    const catObj   = _helpData[catKey];
+    if (!catObj) { content.innerHTML = '<div class="mir-help-thinking">Category not found.</div>'; return; }
+    const safeLang = ['en','fa','ar','zh','de'].includes(lang) ? lang : 'en';
     const section  = catObj[safeLang] || catObj['en'];
-    if (!section) { $('mir-help-content').innerHTML = '<div class="mir-help-thinking">Translation not available.</div>'; return; }
+    if (!section)  { content.innerHTML = '<div class="mir-help-thinking">Translation unavailable.</div>'; return; }
 
-    // Security warning banner
+    /* Security warning */
     const warnEl = $('mir-help-sec-warn');
-    if (section.WARNING && warnEl) {
-      warnEl.innerHTML = '<strong>⚠ CRITICAL SECURITY WARNING:</strong> ' + _esc(section.WARNING);
-      warnEl.classList.add('visible');
-    } else if (warnEl) {
-      warnEl.classList.remove('visible');
+    if (warnEl) {
+      if (section.WARNING) {
+        warnEl.innerHTML = '<strong>⚠ SECURITY:</strong> ' + esc(section.WARNING);
+        warnEl.classList.add('visible');
+      } else {
+        warnEl.classList.remove('visible');
+      }
     }
 
-    // Build HTML
-    const parts = [`<div class="mir-help-section-title">${_esc(section.title || catKey)}</div>`];
-    if (section.summary) {
-      parts.push(`<div class="mir-help-summary">${_esc(section.summary)}</div>`);
-    }
+    /* Build content */
+    const parts = ['<div class="mir-help-section-title">' + esc(section.title || catKey) + '</div>'];
+    if (section.summary) parts.push('<div class="mir-help-summary">' + esc(section.summary) + '</div>');
 
     (section.items || []).forEach(item => {
       if (item.q && item.a) {
-        // Q&A pair
         parts.push(
-          `<div class="mir-help-item">` +
-            `<div class="mir-help-q">${_esc(item.q)}</div>` +
-            `<div class="mir-help-a">${_esc(item.a)}</div>` +
-          `</div>`
+          '<div class="mir-help-item">' +
+            '<div class="mir-help-q">' + esc(item.q) + '</div>' +
+            '<div class="mir-help-a">' + esc(item.a) + '</div>' +
+          '</div>'
         );
       } else if (item.key && item.desc) {
-        // Key → description pair (dashboard keys)
         parts.push(
-          `<div class="mir-help-kd">` +
-            `<span class="mir-help-key">${_esc(item.key)}</span>` +
-            `<span class="mir-help-kdesc">${_esc(item.desc)}</span>` +
-          `</div>`
+          '<div class="mir-help-kd">' +
+            '<span class="mir-help-key">' + esc(item.key) + '</span>' +
+            '<span class="mir-help-kdesc">' + esc(item.desc) + '</span>' +
+          '</div>'
         );
       }
     });
 
-    $('mir-help-content').innerHTML = parts.join('');
-    // Scroll body to top
+    content.innerHTML = parts.join('');
     const body = $('mir-help-body');
     if (body) body.scrollTop = 0;
-    // Clear AI log when switching categories
     const aiLog = $('mir-help-ai-log');
     if (aiLog) aiLog.innerHTML = '';
   }
 
-  // ── Tab switch ────────────────────────────────────────────────────────
+  /* ── Open / Close ──────────────────────────────────────────────────── */
+  async function _open() {
+    const modal = $('mir-help-modal');
+    if (!modal) return;
+    modal.classList.add('open');
+    $('mir-help-input')?.focus();
+    if (!_helpData && !_loading) {
+      const c = $('mir-help-content');
+      if (c) c.innerHTML = '<div class="mir-help-thinking">▸ loading knowledge base...</div>';
+      await _loadHelpData();
+      if (_helpData) _render(_cat, _lang);
+    }
+  }
+
+  function _close() {
+    $('mir-help-modal')?.classList.remove('open');
+  }
+
+  /* ── Tab + Lang switches ───────────────────────────────────────────── */
   function _switchTab(catKey) {
     _cat = catKey;
     $$('.mir-help-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === catKey));
-    if (_helpData) { _renderCategory(catKey, _lang); }
+    if (_helpData) _render(catKey, _lang);
   }
 
-  // ── Language switch ───────────────────────────────────────────────────
   function _switchLang(lang) {
     _lang = lang;
     $$('.mir-help-lang').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-    // RTL for Arabic / Farsi
     const panel = document.querySelector('.mir-help-panel');
     if (panel) panel.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
+    const placeholders = { en:'Ask a question…', fa:'سؤال بپرسید…', ar:'اطرح سؤالاً…', zh:'请提问…', de:'Frage stellen…' };
     const inp = $('mir-help-input');
-    const placeholders = { en:'Ask a question...', fa:'سؤال بپرسید...', ar:'اطرح سؤالاً...', zh:'请提问...', de:'Frage stellen...' };
-    if (inp) inp.placeholder = placeholders[lang] || 'Ask a question...';
-    if (_helpData) { _renderCategory(_cat, lang); }
+    if (inp) inp.placeholder = placeholders[lang] || 'Ask a question…';
+    if (_helpData) _render(_cat, lang);
   }
 
-  // ── AI query ──────────────────────────────────────────────────────────
+  /* ── Ask / AI query ────────────────────────────────────────────────── */
   async function _ask(query) {
-    if (!query.trim() || _aiPending) return;
+    if (!query || !query.trim() || _aiPending) return;
     _aiPending = true;
     const btn = $('mir-help-ask-btn');
     const inp = $('mir-help-input');
     const log = $('mir-help-ai-log');
     if (btn) btn.disabled = true;
-    if (inp) inp.value    = '';
+    if (inp) inp.value = '';
+
     if (log) {
-      const thinking = document.createElement('div');
-      thinking.className = 'mir-help-thinking';
-      thinking.id        = 'mir-help-thinking';
-      thinking.textContent = '▸ processing...';
-      log.appendChild(thinking);
-      $('mir-help-body').scrollTop = 9999;
+      const t = document.createElement('div');
+      t.className = 'mir-help-thinking'; t.id = 'mir-help-thinking-indicator';
+      t.textContent = '▸ processing…';
+      log.appendChild(t);
+      const body = $('mir-help-body');
+      if (body) body.scrollTop = body.scrollHeight;
     }
 
-    let answer = null;
-    let source = 'local';
+    let answer = null, source = 'local';
     try {
-      if (window._mirSupport?.askSupport) {
-        const result = await window._mirSupport.askSupport(query, _lang);
+      const support = window._mirSupport;
+      if (support && typeof support.askSupport === 'function') {
+        const result = await support.askSupport(query, _lang);
         answer = result?.answer || null;
         source = result?.source || 'local';
       } else {
-        // Fallback: search local help data
         answer = _localSearch(query);
-        source = 'local';
       }
-    } catch {}
+    } catch (e) { answer = _localSearch(query); }
 
-    $('mir-help-thinking')?.remove();
+    document.getElementById('mir-help-thinking-indicator')?.remove();
 
     if (log && answer) {
       const msg = document.createElement('div');
       msg.className = 'mir-help-ai-msg';
       msg.innerHTML =
-        `<div class="mir-help-ai-q">▸ ${_esc(query)}</div>` +
-        `<div class="mir-help-ai-a">${_esc(answer)}</div>` +
-        `<div class="mir-help-ai-src">${source === 'ai' ? '⬡ claude-sonnet · live AI' : '◈ local knowledge base'}</div>`;
+        '<div class="mir-help-ai-q">▸ ' + esc(query) + '</div>' +
+        '<div class="mir-help-ai-a">' + esc(answer) + '</div>' +
+        '<div class="mir-help-ai-src">' + (source === 'ai' ? '⬡ AI · live' : '◈ local knowledge') + '</div>';
       log.appendChild(msg);
-      $('mir-help-body').scrollTop = 9999;
+      const body = $('mir-help-body');
+      if (body) body.scrollTop = body.scrollHeight;
     }
 
     if (btn) btn.disabled = false;
@@ -3267,9 +3322,9 @@ window.injectHelpHUD = (function () {
     _aiPending = false;
   }
 
-  // ── Local keyword search fallback ─────────────────────────────────────
+  /* ── Local keyword search fallback ────────────────────────────────── */
   function _localSearch(query) {
-    if (!_helpData) return 'Help data not loaded yet.';
+    if (!_helpData) return 'Help data not loaded. Check that help_content.js is uploaded.';
     const q = query.toLowerCase();
     let best = null, bestScore = 0;
     Object.values(_helpData).forEach(catObj => {
@@ -3281,102 +3336,65 @@ window.injectHelpHUD = (function () {
         if (score > bestScore) { bestScore = score; best = item.a || item.desc; }
       });
     });
-    return best || 'No match found. Try the category tabs above or rephrase your question.';
+    return best || 'No exact match. Try a different keyword or browse the category tabs.';
   }
 
-  // ── Open / Close ──────────────────────────────────────────────────────
-  async function _open() {
-    $('mir-help-modal')?.classList.add('open');
-    $('mir-help-input')?.focus();
-    // Lazy-load on first open
-    if (!_helpData) {
-      $('mir-help-content').innerHTML = '<div class="mir-help-thinking">Loading knowledge base...</div>';
-      await _loadHelpData();
-      if (_helpData) _renderCategory(_cat, _lang);
-    }
+  /* ── Inject ? button into #nav-right ──────────────────────────────── */
+  function _injectNavButton() {
+    if ($('hud-help-btn')) return;
+    const navRight = $('nav-right');
+    if (!navRight) return;
+    const btn = document.createElement('button');
+    btn.id          = 'hud-help-btn';
+    btn.className   = 'nbtn';
+    btn.title       = 'Help Centre';
+    btn.textContent = '?';
+    btn.addEventListener('click',      _open);
+    btn.addEventListener('mouseenter', () => { if (!_helpData && !_loading) _loadHelpData(); });
+    const sbToggle = $('sb-toggle');
+    sbToggle ? navRight.insertBefore(btn, sbToggle) : navRight.appendChild(btn);
   }
 
-  function _close() {
-    $('mir-help-modal')?.classList.remove('open');
-  }
-
-  // ── Wire up events (run once after DOM is ready) ──────────────────────
+  /* ── Wire all event listeners ──────────────────────────────────────── */
   function _wireEvents() {
-    // FAB button
     $('mir-help-fab')?.addEventListener('click', _open);
-    // Modal close button
+    $('mir-help-fab')?.addEventListener('mouseenter', () => { if (!_helpData && !_loading) _loadHelpData(); });
     $('mir-help-close')?.addEventListener('click', _close);
-    // Click outside panel
     $('mir-help-modal')?.addEventListener('click', e => {
       if (e.target === $('mir-help-modal')) _close();
     });
-    // Escape key
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && $('mir-help-modal')?.classList.contains('open')) _close();
     });
-    // Tab buttons
-    $$('.mir-help-tab').forEach(btn => {
-      btn.addEventListener('click', () => _switchTab(btn.dataset.cat));
-    });
-    // Lang buttons
-    $$('.mir-help-lang').forEach(btn => {
-      btn.addEventListener('click', () => _switchLang(btn.dataset.lang));
-    });
-    // Ask button
+    $$('.mir-help-tab').forEach(btn  => btn.addEventListener('click', () => _switchTab(btn.dataset.cat)));
+    $$('.mir-help-lang').forEach(btn => btn.addEventListener('click', () => _switchLang(btn.dataset.lang)));
     $('mir-help-ask-btn')?.addEventListener('click', () => {
-      const q = $('mir-help-input')?.value?.trim();
-      if (q) _ask(q);
+      const v = $('mir-help-input')?.value?.trim();
+      if (v) _ask(v);
     });
-    // Enter key in input
     $('mir-help-input')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const q = $('mir-help-input')?.value?.trim();
-        if (q) _ask(q);
-      }
+      if (e.key === 'Enter') { const v = e.target.value?.trim(); if (v) _ask(v); }
     });
-    // Preload on FAB hover
-    $('mir-help-fab')?.addEventListener('mouseenter', () => {
-      if (!_helpData && !_loading) _loadHelpData();
-    });
+
+    /* Set initial active lang button to match detected language */
+    $$('.mir-help-lang').forEach(b => b.classList.toggle('active', b.dataset.lang === _lang));
   }
 
-  // ── Add ? button to #nav-right ────────────────────────────────────────
-  function _injectNavButton() {
-    if ($('hud-help-btn')) return; // already injected
-    const navRight = $('nav-right');
-    if (!navRight) return;
-    // Insert before the ◧ sidebar toggle (last button)
-    const sidebarBtn = $('sb-toggle');
-    const helpBtn    = document.createElement('button');
-    helpBtn.id        = 'hud-help-btn';
-    helpBtn.className = 'nbtn';
-    helpBtn.title     = 'Help Centre (?)';
-    helpBtn.setAttribute('aria-label', 'Open help centre');
-    helpBtn.textContent = '?';
-    helpBtn.addEventListener('click', _open);
-    helpBtn.addEventListener('mouseenter', () => {
-      if (!_helpData && !_loading) _loadHelpData();
-    });
-    if (sidebarBtn) {
-      navRight.insertBefore(helpBtn, sidebarBtn);
-    } else {
-      navRight.appendChild(helpBtn);
-    }
-  }
-
-  // ── Public entry point: injectHelpHUD() ──────────────────────────────
-  // Called from ai_evolution.js once the app is fully booted.
+  /* ── Public entry point ────────────────────────────────────────────── */
   return function injectHelpHUD() {
-    if ($('hud-help-btn')) return; // idempotent
+    if ($('hud-help-btn')) return; /* idempotent */
     _injectNavButton();
     _wireEvents();
-    // Reveal the FAB with a bounce animation
+    /* Preload help data immediately */
+    _loadHelpData();
+    /* Show FAB with bounce */
     requestAnimationFrame(() => {
       const fab = $('mir-help-fab');
       if (fab) fab.classList.add('ready');
     });
-    // Expose public API for support_agent.js integration
-    window._mirHelpHUD = { open: _open, close: _close, askQuestion: _ask };
+    /* Expose API */
+    window._mirHelpHUD = { open: _open, close: _close, ask: _ask };
+    console.log('[HELP] HUD injected, lang:', _lang);
   };
 })();
 </script>

@@ -1,562 +1,772 @@
 /**
  * help_content.js
- * File Name:    help_content.js
- * Version:      1.0.0
+ * Version:      2.0.0
+ * Arch Hash:    0cd97f1b6a24d823
+ * Last Sync:    PHASE-3
  *
- * MIR Platform — Static Help Data
- * Pure data export — zero functions, zero logic, zero side-effects.
- * Lazy-loaded by support_agent.js only on user demand.
+ * MIR Academy — Sovereign Knowledge Base
+ * Pure data module. Zero functions. Zero side-effects.
+ * Lazy-loaded by support_agent.js on first user interaction.
+ *
+ * Structure per category:
+ *   { en, fa, ar, zh, de } → { title, summary, WARNING?, modules[] }
+ *   Each module: { id, heading, body, tags[], difficulty }
  */
 
 'use strict';
 
 export const HELP_DATA = {
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 1. DASHBOARD KEYS
-  // ─────────────────────────────────────────────────────────────────────────
-  dashboard_keys: {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 1. PROTOCOL FUNDAMENTALS
+  // ═══════════════════════════════════════════════════════════════════════
+  protocol_fundamentals: {
     en: {
-      title: 'Dashboard Navigation',
-      summary: 'Keyboard shortcuts and HUD controls.',
-      items: [
-        { key: '⬡ SOVEREIGN',    desc: 'Open Admin Terminal (Rule 0 commands).' },
-        { key: '⬡ MINE',         desc: 'Toggle PoUW mining engine on/off.' },
-        { key: '◧ (sidebar)',     desc: 'Collapse/expand the left navigation panel.' },
-        { key: 'Nav items',       desc: 'Feed · Scenarios · Predictions · Agents · Cognitive · Mining · OTC · Ledger · Leaderboard · Tokenomics.' },
-        { key: 'SYNC NOW',        desc: 'Manually push current DB snapshot to GitHub Gist.' },
-        { key: 'SUBMIT INTEL',    desc: 'Post a new intelligence item to the live feed.' },
-        { key: 'Dream State',     desc: 'Freeze UI, consolidate agent memory, commit optimised state to ledger.' },
+      title:   'Protocol Fundamentals',
+      summary: 'Core architecture, token model, and network rules of MIR.',
+      modules: [
+        {
+          id: 'pf-001',
+          heading: 'What is MIR?',
+          body: 'MIR is a decentralised, browser-native sovereign intelligence platform. It operates without central servers. Your identity is a cryptographic keypair generated locally. Data persists in IndexedDB and propagates peer-to-peer via WebRTC. No account recovery exists — your private key is your identity.',
+          tags: ['overview','identity','decentralised'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pf-002',
+          heading: 'Token Architecture — MIR & MIRI',
+          body: 'Total fixed supply: 2,100,000.00000000 MIR. Smallest unit: 1 MIRI = 0.00000001 MIR (10^-8). Supply is mathematically capped — no inflation. Burns are permanent and reduce circulating supply each time a user upvotes content.',
+          tags: ['tokenomics','supply','miri'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pf-003',
+          heading: 'Deflationary Burn Mechanics',
+          body: 'Every upvote costs 1.00000000 MIR. 2% (0.02 MIR) is permanently burned — removed from circulating supply forever. 98% (0.98 MIR) goes to the content creator. AI-facilitated OTC orders carry a 10% infrastructure fee routed to the Network Rewards Pool.',
+          tags: ['burn','upvote','deflationary'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pf-004',
+          heading: 'Forecaster Reputation Score (FRS)',
+          body: 'FRS ranges 0–100. It is earned exclusively when your prediction logs align with Admin Ground Truth resolutions. Higher FRS increases your upvote weight, your influence on consensus probability calculations, and your access to advanced analytical tools. FRS cannot be bought or transferred.',
+          tags: ['frs','reputation','prediction'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pf-005',
+          heading: 'Identity Partition & Key Loss Policy',
+          body: 'Every ED25519 public key is a unique sovereign identity partition in IndexedDB. If you lose your private key, your data partition becomes permanently inaccessible. You may re-register with a new keypair, creating a fresh partition. This is non-custodial by design — MIR cannot recover lost keys.',
+          tags: ['identity','key','recovery','partition'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     fa: {
-      title: 'کلیدهای داشبورد',
-      summary: 'میانبرهای صفحه‌کلید و کنترل‌های HUD.',
-      items: [
-        { key: '⬡ SOVEREIGN',    desc: 'باز کردن ترمینال ادمین (دستورات Rule 0).' },
-        { key: '⬡ MINE',         desc: 'روشن/خاموش کردن موتور استخراج PoUW.' },
-        { key: '◧ (نوار کناری)',  desc: 'پنهان/نمایش پنل ناوبری چپ.' },
-        { key: 'آیتم‌های ناوبری', desc: 'خوراک · سناریوها · پیش‌بینی‌ها · عوامل · شناختی · استخراج · OTC · دفتر کل · رتبه‌بندی · توکنومیکس.' },
-        { key: 'SYNC NOW',        desc: 'ارسال دستی اسنپ‌شات پایگاه داده به GitHub Gist.' },
-        { key: 'SUBMIT INTEL',    desc: 'ارسال یک آیتم اطلاعاتی جدید به خوراک زنده.' },
-        { key: 'Dream State',     desc: 'انجماد UI، یکپارچه‌سازی حافظه عامل، ثبت حالت بهینه در دفتر کل.' },
+      title:   'اصول پروتکل',
+      summary: 'معماری اصلی، مدل توکن و قوانین شبکه MIR.',
+      modules: [
+        {
+          id: 'pf-001',
+          heading: 'MIR چیست؟',
+          body: 'MIR یک پلتفرم اطلاعاتی حاکمیتی غیرمتمرکز و مبتنی بر مرورگر است. بدون سرور مرکزی کار می‌کند. هویت شما یک جفت کلید رمزنگاری است که به صورت محلی تولید می‌شود. هیچ بازیابی حساب وجود ندارد — کلید خصوصی شما هویت شماست.',
+          tags: ['overview','identity','decentralised'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pf-002',
+          heading: 'معماری توکن — MIR و MIRI',
+          body: 'عرضه ثابت کل: ۲,۱۰۰,۰۰۰.۰۰۰۰۰۰۰۰ MIR. کوچکترین واحد: ۱ MIRI = ۰.۰۰۰۰۰۰۰۱ MIR. عرضه به صورت ریاضی محدود شده است — بدون تورم.',
+          tags: ['tokenomics','supply','miri'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pf-003',
+          heading: 'مکانیزم سوزاندن کاهشی',
+          body: 'هر رأی مثبت ۱.۰۰۰۰۰۰۰۰ MIR هزینه دارد. ۲٪ (۰.۰۲ MIR) برای همیشه سوزانده می‌شود. ۹۸٪ (۰.۹۸ MIR) به سازنده محتوا می‌رسد. سفارش‌های OTC با واسطه AI دارای کارمزد ۱۰٪ هستند.',
+          tags: ['burn','upvote','deflationary'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pf-004',
+          heading: 'امتیاز شهرت پیش‌بین (FRS)',
+          body: 'FRS از ۰ تا ۱۰۰ است. فقط زمانی به دست می‌آید که پیش‌بینی‌های شما با نتایج واقعی مطابقت داشته باشند. FRS بالاتر وزن رأی و نفوذ شما را در محاسبات اجماع افزایش می‌دهد.',
+          tags: ['frs','reputation','prediction'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pf-005',
+          heading: 'پارتیشن هویت و سیاست از دست دادن کلید',
+          body: 'هر کلید عمومی ED25519 یک پارتیشن هویت منحصر به فرد در IndexedDB است. اگر کلید خصوصی را گم کنید، پارتیشن داده شما برای همیشه غیرقابل دسترس می‌شود. می‌توانید با یک جفت کلید جدید مجدداً ثبت‌نام کنید.',
+          tags: ['identity','key','recovery','partition'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     ar: {
-      title: 'مفاتيح لوحة التحكم',
-      summary: 'اختصارات لوحة المفاتيح وعناصر التحكم في HUD.',
-      items: [
-        { key: '⬡ SOVEREIGN',    desc: 'فتح Terminal الإدارة (أوامر Rule 0).' },
-        { key: '⬡ MINE',         desc: 'تشغيل/إيقاف محرك التعدين PoUW.' },
-        { key: '◧ (الشريط الجانبي)', desc: 'طي/توسيع لوحة التنقل اليسرى.' },
-        { key: 'عناصر التنقل',    desc: 'التغذية · السيناريوهات · التنبؤات · العوامل · المعرفية · التعدين · OTC · السجل · المتصدرون · Tokenomics.' },
-        { key: 'SYNC NOW',        desc: 'دفع لقطة قاعدة البيانات يدوياً إلى GitHub Gist.' },
-        { key: 'SUBMIT INTEL',    desc: 'نشر عنصر معلومات جديد في التغذية الحية.' },
-        { key: 'Dream State',     desc: 'تجميد واجهة المستخدم وتوحيد ذاكرة الوكيل وحفظ الحالة المحسّنة.' },
+      title:   'أساسيات البروتوكول',
+      summary: 'البنية الأساسية ونموذج التوكن وقواعد شبكة MIR.',
+      modules: [
+        {
+          id: 'pf-001',
+          heading: 'ما هو MIR؟',
+          body: 'MIR منصة استخباراتية سيادية لامركزية تعمل في المتصفح بدون خوادم مركزية. هويتك هي زوج مفاتيح تشفيري يُنشأ محلياً. لا يوجد استرداد للحساب — مفتاحك الخاص هو هويتك.',
+          tags: ['overview','identity','decentralised'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pf-002',
+          heading: 'بنية التوكن — MIR و MIRI',
+          body: 'الإمداد الثابت الكلي: 2,100,000.00000000 MIR. أصغر وحدة: 1 MIRI = 0.00000001 MIR. الإمداد محدود رياضياً — لا تضخم.',
+          tags: ['tokenomics','supply','miri'],
+          difficulty: 'beginner',
+        },
       ],
     },
     zh: {
-      title: '仪表板快捷键',
-      summary: '键盘快捷键和HUD控件。',
-      items: [
-        { key: '⬡ SOVEREIGN',    desc: '打开管理员终端（Rule 0 命令）。' },
-        { key: '⬡ MINE',         desc: '开启/关闭 PoUW 挖矿引擎。' },
-        { key: '◧（侧边栏）',    desc: '折叠/展开左侧导航面板。' },
-        { key: '导航项',          desc: '动态情报 · 情景 · 预测 · AI代理 · 认知 · 挖矿 · 场外交易 · 账本 · 排行榜 · 代币经济。' },
-        { key: 'SYNC NOW',        desc: '手动将数据库快照推送到 GitHub Gist。' },
-        { key: 'SUBMIT INTEL',    desc: '向实时信息流发布新情报项目。' },
-        { key: 'Dream State',     desc: '冻结界面，整合代理记忆，将优化状态提交至账本。' },
+      title:   '协议基础',
+      summary: 'MIR的核心架构、代币模型和网络规则。',
+      modules: [
+        {
+          id: 'pf-001',
+          heading: '什么是MIR？',
+          body: 'MIR是一个去中心化、基于浏览器的主权情报平台，无需中央服务器运行。您的身份是本地生成的加密密钥对。没有账户恢复功能——您的私钥就是您的身份。',
+          tags: ['overview','identity','decentralised'],
+          difficulty: 'beginner',
+        },
       ],
     },
     de: {
-      title: 'Dashboard-Tasten',
-      summary: 'Tastenkürzel und HUD-Steuerelemente.',
-      items: [
-        { key: '⬡ SOVEREIGN',    desc: 'Admin-Terminal öffnen (Rule-0-Befehle).' },
-        { key: '⬡ MINE',         desc: 'PoUW-Mining-Engine ein-/ausschalten.' },
-        { key: '◧ (Seitenleiste)',desc: 'Linkes Navigationspanel ein-/ausblenden.' },
-        { key: 'Navigationspunkte', desc: 'Feed · Szenarien · Prognosen · Agenten · Kognitiv · Mining · OTC · Hauptbuch · Bestenliste · Tokenomics.' },
-        { key: 'SYNC NOW',        desc: 'DB-Snapshot manuell zu GitHub Gist übertragen.' },
-        { key: 'SUBMIT INTEL',    desc: 'Neues Geheimdienstitem im Live-Feed posten.' },
-        { key: 'Dream State',     desc: 'UI einfrieren, Agentenspeicher konsolidieren, optimierten Zustand ins Ledger schreiben.' },
+      title:   'Protokoll-Grundlagen',
+      summary: 'Kernarchitektur, Token-Modell und Netzwerkregeln von MIR.',
+      modules: [
+        {
+          id: 'pf-001',
+          heading: 'Was ist MIR?',
+          body: 'MIR ist eine dezentralisierte, browsernative souveräne Intelligenzplattform ohne zentrale Server. Ihre Identität ist ein lokal generiertes kryptographisches Schlüsselpaar. Keine Kontowiederherstellung — Ihr privater Schlüssel IST Ihre Identität.',
+          tags: ['overview','identity','decentralised'],
+          difficulty: 'beginner',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 2. REGISTRATION
-  // ─────────────────────────────────────────────────────────────────────────
-  registration: {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 2. SOVEREIGN OVERRIDE MECHANICS
+  // ═══════════════════════════════════════════════════════════════════════
+  sovereign_override: {
     en: {
-      title: 'Registration & Identity',
-      summary: 'How to create your sovereign identity on MIR.',
-      items: [
-        { q: 'How do I register?',        a: 'Click the key icon → REGISTER. Choose a username, then click GENERATE KEYPAIR. Save both keys before submitting.' },
-        { q: 'What is the welcome bonus?', a: '+10.00000000 MIR is credited automatically on first registration.' },
-        { q: 'Can I have multiple accounts?', a: 'Each ED25519 key pair is a unique sovereign identity. Multiple accounts share the same network pool.' },
-        { q: 'Lost my keys — can I recover?', a: 'No. MIR is fully decentralised. There is no password reset. Your private key IS your identity.' },
+      title:   'Sovereign Override Mechanics',
+      summary: 'Admin terminal commands and Rule 0 authority system.',
+      WARNING: 'SOVEREIGN COMMANDS HAVE IRREVERSIBLE CONSEQUENCES. The Admin private key grants absolute authority over all platform operations. Never share it. Never store it digitally without AES-256-GCM encryption.',
+      modules: [
+        {
+          id: 'so-001',
+          heading: 'Rule 0 — Sovereign Authority',
+          body: 'The Sovereign Admin is identified solely by their ED25519 public key signature. This key holds supreme, unchallengeable authority. When a payload is signed by the Admin private key, it immediately preempts all autonomous logic, peer consensus, and state parameters across the entire network. SOVEREIGN_PRIORITY = Infinity in all CRDT merge operations.',
+          tags: ['admin','sovereignty','rule0'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'so-002',
+          heading: 'Admin Terminal — Command Reference',
+          body: 'Access: Ctrl+Shift+A or ⬡ SOVEREIGN button.\n\napikey <key> — Set Anthropic API key (stored in localStorage only)\nsetwebhook twitter <url> — Register OSINT webhook\noverride <field> <value> — Override any DB field\nfreeze / unfreeze — Halt/resume all autonomous operations\nmint <pubkey> <amount> — Issue MIR to address\nburn <pubkey> <amount> — Destroy MIR from address\ndream — Engage Dream State consolidation\ngithubconfig <owner> <repo> <path> <token> — Configure sync\ngithubsync — Push DB snapshot to GitHub Gist\nstatus — Full system diagnostic\nreset CONFIRM — Emergency data purge',
+          tags: ['terminal','commands','admin'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'so-003',
+          heading: 'Scenario Probability Override',
+          body: 'Command: override scenario_prob <value>|<title>\nSets a locked probability on a scenario. The AI agents cannot modify admin-overridden probabilities. The value is marked with adminOverride:true in the CRDT ledger. Ground Truth resolution (override scenario_resolve true|<title>) awards or deducts FRS from all participants.',
+          tags: ['scenarios','override','ground-truth'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'so-004',
+          heading: 'Emergency Kill-Switch',
+          body: 'Command: reset CONFIRM\nExecutes total systemic deconstruction with literal fidelity. Clears all IndexedDB partitions, localStorage, sessionStorage, and active peer connections. This operation is PERMANENT and IRREVERSIBLE. All user data, balances, and CRDT state are destroyed. Use only in genuine emergency.',
+          tags: ['emergency','reset','kill-switch'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'so-005',
+          heading: 'Dream State Consolidation',
+          body: 'Command: dream (or via terminal)\nFreezes the client UI and presents a data optimisation overlay. Filters STM noise, executes P2P training adaptations among the 3 AI agents, updates relationship matrices, and commits the optimised state back to the distributed CRDT pipeline. Duration: 10-30 seconds depending on data volume.',
+          tags: ['dream','ai','consolidation'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     fa: {
-      title: 'ثبت‌نام و هویت',
-      summary: 'نحوه ایجاد هویت حاکمیتی در MIR.',
-      items: [
-        { q: 'چگونه ثبت‌نام کنم؟',        a: 'روی آیکون کلید کلیک کنید → REGISTER. نام کاربری انتخاب کنید، سپس GENERATE KEYPAIR را بزنید. قبل از ارسال هر دو کلید را ذخیره کنید.' },
-        { q: 'پاداش خوش‌آمد چیست؟',      a: '+10.00000000 MIR به صورت خودکار در اولین ثبت‌نام اعتبار داده می‌شود.' },
-        { q: 'آیا می‌توانم چند حساب داشته باشم؟', a: 'هر جفت کلید ED25519 یک هویت حاکمیتی منحصر به فرد است.' },
-        { q: 'کلیدهایم را گم کردم — می‌توانم بازیابی کنم؟', a: 'خیر. MIR کاملاً غیرمتمرکز است. بازنشانی رمز عبور وجود ندارد. کلید خصوصی شما هویت شماست.' },
+      title:   'مکانیک Override حاکمیتی',
+      summary: 'دستورات ترمینال ادمین و سیستم اقتدار Rule 0.',
+      WARNING: 'دستورات SOVEREIGN پیامدهای غیرقابل بازگشت دارند. کلید خصوصی ادمین اقتدار مطلق بر تمام عملیات پلتفرم اعطا می‌کند. هرگز آن را به اشتراک نگذارید.',
+      modules: [
+        {
+          id: 'so-001',
+          heading: 'Rule 0 — اقتدار حاکمیتی',
+          body: 'ادمین حاکمیتی فقط با امضای کلید عمومی ED25519 شناسایی می‌شود. این کلید دارای اقتدار عالی و غیرقابل چالش است. وقتی یک پیلود با کلید خصوصی ادمین امضا می‌شود، فوراً تمام منطق خودمختار را نادیده می‌گیرد. SOVEREIGN_PRIORITY = Infinity در تمام عملیات CRDT.',
+          tags: ['admin','sovereignty','rule0'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'so-002',
+          heading: 'ترمینال ادمین — راهنمای دستورات',
+          body: 'دسترسی: Ctrl+Shift+A یا دکمه ⬡ SOVEREIGN\n\napikey <key> — تنظیم کلید API آنتروپیک\noverride <field> <value> — Override هر فیلد DB\nfreeze / unfreeze — توقف/از سرگیری عملیات\nmint <pubkey> <amount> — صدور MIR\nburn <pubkey> <amount> — حذف MIR\ndream — اجرای Dream State\nreset CONFIRM — پاکسازی اضطراری داده',
+          tags: ['terminal','commands','admin'],
+          difficulty: 'advanced',
+        },
       ],
     },
     ar: {
-      title: 'التسجيل والهوية',
-      summary: 'كيفية إنشاء هويتك السيادية على MIR.',
-      items: [
-        { q: 'كيف أسجّل؟',              a: 'انقر على أيقونة المفتاح ← REGISTER. اختر اسم مستخدم ثم انقر GENERATE KEYPAIR. احفظ كلا المفتاحين قبل الإرسال.' },
-        { q: 'ما هو مكافأة الترحيب؟',   a: 'يُضاف +10.00000000 MIR تلقائياً عند التسجيل الأول.' },
-        { q: 'هل يمكنني امتلاك حسابات متعددة؟', a: 'كل زوج مفاتيح ED25519 هو هوية سيادية فريدة.' },
-        { q: 'فقدتُ مفاتيحي — هل يمكنني الاسترداد؟', a: 'لا. MIR لامركزي بالكامل. لا يوجد إعادة تعيين كلمة المرور. مفتاحك الخاص هو هويتك.' },
+      title:   'ميكانيكا التجاوز السيادي',
+      summary: 'أوامر Terminal الإدارة ونظام سلطة Rule 0.',
+      WARNING: 'أوامر SOVEREIGN لها عواقب لا رجعة فيها. لا تشاركها أبداً.',
+      modules: [
+        {
+          id: 'so-001',
+          heading: 'Rule 0 — السلطة السيادية',
+          body: 'يُحدَّد المشرف السيادي بتوقيع مفتاح ED25519 العام فقط. يمنح هذا المفتاح سلطة عليا لا تُطعن فيها. SOVEREIGN_PRIORITY = Infinity في جميع عمليات CRDT.',
+          tags: ['admin','sovereignty','rule0'],
+          difficulty: 'advanced',
+        },
       ],
     },
     zh: {
-      title: '注册与身份',
-      summary: '如何在 MIR 上创建您的主权身份。',
-      items: [
-        { q: '如何注册？',              a: '点击钥匙图标 → REGISTER。选择用户名，然后点击 GENERATE KEYPAIR。提交前保存两个密钥。' },
-        { q: '欢迎奖励是什么？',        a: '首次注册时自动获得 +10.00000000 MIR。' },
-        { q: '我可以拥有多个账户吗？',  a: '每个 ED25519 密钥对都是唯一的主权身份。' },
-        { q: '丢失了密钥——能恢复吗？',  a: '不能。MIR 完全去中心化，没有密码重置。您的私钥就是您的身份。' },
+      title:   '主权覆盖机制',
+      summary: '管理员终端命令和Rule 0权限系统。',
+      WARNING: '主权命令具有不可逆的后果。管理员私钥授予对所有平台操作的绝对权限。切勿分享。',
+      modules: [
+        {
+          id: 'so-001',
+          heading: 'Rule 0 — 主权权威',
+          body: '主权管理员仅通过其ED25519公钥签名识别。该密钥拥有最高、不可挑战的权威。当管理员私钥签署载荷时，立即抢占所有自主逻辑。SOVEREIGN_PRIORITY = Infinity在所有CRDT合并操作中。',
+          tags: ['admin','sovereignty','rule0'],
+          difficulty: 'advanced',
+        },
       ],
     },
     de: {
-      title: 'Registrierung & Identität',
-      summary: 'So erstellen Sie Ihre souveräne Identität auf MIR.',
-      items: [
-        { q: 'Wie registriere ich mich?',  a: 'Schlüsselsymbol anklicken → REGISTER. Benutzernamen wählen, dann GENERATE KEYPAIR klicken. Beide Schlüssel vor dem Absenden speichern.' },
-        { q: 'Was ist der Willkommensbonus?', a: '+10.00000000 MIR wird bei der ersten Registrierung automatisch gutgeschrieben.' },
-        { q: 'Kann ich mehrere Konten haben?', a: 'Jedes ED25519-Schlüsselpaar ist eine einzigartige souveräne Identität.' },
-        { q: 'Schlüssel verloren — Wiederherstellung möglich?', a: 'Nein. MIR ist vollständig dezentralisiert. Kein Passwort-Reset. Ihr privater Schlüssel IST Ihre Identität.' },
+      title:   'Sovereign Override Mechanik',
+      summary: 'Admin-Terminal-Befehle und Rule-0-Autoritätssystem.',
+      WARNING: 'SOVEREIGN-Befehle haben irreversible Konsequenzen. Nie teilen.',
+      modules: [
+        {
+          id: 'so-001',
+          heading: 'Rule 0 — Souveräne Autorität',
+          body: 'Der Sovereign Admin wird ausschließlich durch seine ED25519-Schlüsselsignatur identifiziert. Dieser Schlüssel hat höchste, unbestreitbare Autorität. SOVEREIGN_PRIORITY = Infinity in allen CRDT-Merge-Operationen.',
+          tags: ['admin','sovereignty','rule0'],
+          difficulty: 'advanced',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 3. COMMENTING / INTEL SUBMISSION
-  // ─────────────────────────────────────────────────────────────────────────
-  commenting: {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 3. P2P OTC ESCROW
+  // ═══════════════════════════════════════════════════════════════════════
+  otc_escrow: {
     en: {
-      title: 'Intel Submission & Upvotes',
-      summary: 'Contribute intelligence items and earn FRS.',
-      items: [
-        { q: 'How do I submit intel?',    a: 'Click SUBMIT INTEL. Fill in Headline, Analysis, and Tags. Costs 0 MIR; boosts your FRS if upvoted.' },
-        { q: 'How do upvotes work?',      a: 'Each upvote costs 1.00000000 MIR. 2% is burned (deflationary). 98% goes to the content creator.' },
-        { q: 'What is FRS?',              a: 'Forecaster Reputation Score (0–100). Higher FRS increases your upvote weight and platform influence.' },
-        { q: 'Can I be shadowbanned?',    a: 'Automated or bot-like submission patterns are silently flagged. Human-paced natural interaction is always safe.' },
+      title:   'P2P OTC Escrow Usage',
+      summary: 'Peer-to-peer MIR trading with browser-native cryptographic escrow.',
+      modules: [
+        {
+          id: 'otc-001',
+          heading: 'How OTC Escrow Works',
+          body: 'MIR OTC is a fully peer-to-peer trading system with no central exchange or gas fees. When you create a sell order, your MIR balance is locked in a browser-native cryptographic escrow. The escrow releases only upon confirmed buyer payment signature. All settlement is off-chain — payment confirmation happens outside MIR.',
+          tags: ['otc','escrow','p2p','trading'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'otc-002',
+          heading: 'Creating a Sell Order',
+          body: 'Navigate to OTC Market → SELL MIR.\n1. Enter amount (minimum 0.1 MIR)\n2. Set your price and currency (USD/EUR/USDT)\n3. Your private key signs the escrow lock transaction\n4. The order appears in the public order book\n5. Await buyer match\n\nYour balance is immediately locked. Cancel anytime before buyer confirms.',
+          tags: ['sell','order','escrow'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'otc-003',
+          heading: 'Creating a Buy Order',
+          body: 'Navigate to OTC Market → BUY MIR.\n1. Select an existing sell order OR create a standing buy\n2. Agree on price with seller off-platform\n3. Complete payment off-chain (bank transfer, crypto, etc.)\n4. Return to MIR and confirm payment with your private key signature\n5. Seller confirms receipt — escrow releases MIR to your address automatically',
+          tags: ['buy','order','confirmation'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'otc-004',
+          heading: 'Fee Structure',
+          body: 'Direct peer orders: 0% fee — fully free.\nAI-facilitated matching (automatic): 10% infrastructure fee → Network Rewards Pool.\nBurn tax does NOT apply to OTC transactions — only to upvotes.\n\nNOTE: MIR provides no financial advice. All trading decisions are solely the user\'s responsibility. Market prices are determined entirely by peer participants.',
+          tags: ['fees','tax','network'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'otc-005',
+          heading: 'Dispute & Admin Cancellation',
+          body: 'If a trade fails or counterparty is unresponsive, the Admin can cancel a locked escrow via Sovereign Terminal: override otc_cancel <order_id>. Funds return immediately to the seller\'s address. There is no automated dispute resolution — Admin intervention is the final mechanism.',
+          tags: ['dispute','cancel','admin'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     fa: {
-      title: 'ارسال اطلاعات و رأی مثبت',
-      summary: 'مشارکت در اطلاعات و کسب FRS.',
-      items: [
-        { q: 'چگونه اطلاعات ارسال کنم؟', a: 'SUBMIT INTEL را بزنید. عنوان، تحلیل و برچسب‌ها را پر کنید. هزینه‌ای ندارد؛ اگر رأی بگیرید FRS شما افزایش می‌یابد.' },
-        { q: 'رأی مثبت چگونه کار می‌کند؟', a: 'هر رأی ۱.۰۰۰۰۰۰۰۰ MIR هزینه دارد. ۲٪ سوزانده می‌شود. ۹۸٪ به سازنده محتوا می‌رسد.' },
-        { q: 'FRS چیست؟',              a: 'امتیاز شهرت پیش‌بین (۰–۱۰۰). FRS بالاتر وزن رأی و نفوذ شما را افزایش می‌دهد.' },
-        { q: 'آیا می‌توانم shadowban شوم؟', a: 'الگوهای ارسال خودکار یا ربات‌مانند بی‌صدا علامت‌گذاری می‌شوند. تعامل طبیعی به سرعت انسانی همیشه امن است.' },
+      title:   'استفاده از Escrow OTC همتا به همتا',
+      summary: 'معاملات MIR همتا به همتا با Escrow رمزنگاری بومی مرورگر.',
+      modules: [
+        {
+          id: 'otc-001',
+          heading: 'نحوه عملکرد Escrow OTC',
+          body: 'OTC MIR یک سیستم معاملاتی کاملاً همتا به همتا بدون صرافی مرکزی یا کارمزد gas است. وقتی یک سفارش فروش ایجاد می‌کنید، موجودی MIR شما در یک Escrow رمزنگاری بومی مرورگر قفل می‌شود. Escrow فقط با تأیید امضای پرداخت خریدار آزاد می‌شود.',
+          tags: ['otc','escrow','p2p','trading'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'otc-002',
+          heading: 'ایجاد سفارش فروش',
+          body: 'بازار OTC → SELL MIR\n۱. مقدار را وارد کنید (حداقل ۰.۱ MIR)\n۲. قیمت و ارز را تنظیم کنید\n۳. کلید خصوصی شما تراکنش قفل Escrow را امضا می‌کند\n۴. سفارش در دفتر سفارش‌های عمومی ظاهر می‌شود\n۵. منتظر تطابق خریدار باشید',
+          tags: ['sell','order','escrow'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'otc-004',
+          heading: 'ساختار کارمزد',
+          body: 'سفارش‌های مستقیم همتا: ۰٪ کارمزد — کاملاً رایگان.\nتطابق با واسطه AI: ۱۰٪ کارمزد زیرساخت → استخر پاداش شبکه.\n\nتوجه: MIR هیچ توصیه مالی ارائه نمی‌دهد. تمام تصمیمات معاملاتی کاملاً مسئولیت کاربر است.',
+          tags: ['fees','tax','network'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     ar: {
-      title: 'تقديم المعلومات والتصويت',
-      summary: 'ساهم بعناصر المعلومات واكسب FRS.',
-      items: [
-        { q: 'كيف أقدّم معلومات؟',      a: 'انقر SUBMIT INTEL. أدخل العنوان والتحليل والعلامات. لا تكلفة؛ يُعزَّز FRS عند التصويت لصالحك.' },
-        { q: 'كيف يعمل التصويت؟',       a: 'كل تصويت يكلف 1.00000000 MIR. 2% يُحرق. 98% يذهب لصاحب المحتوى.' },
-        { q: 'ما هو FRS؟',              a: 'نقاط سمعة المتنبئ (0–100). كلما ارتفع FRS زاد وزن تصويتك وتأثيرك.' },
-        { q: 'هل يمكنني أن أُحظر بصمت؟', a: 'أنماط الإرسال الآلية تُعلَّم بصمت. التفاعل الطبيعي البشري آمن دائماً.' },
+      title:   'استخدام ضمان OTC P2P',
+      summary: 'تداول MIR بين الأقران مع ضمان تشفيري أصيل في المتصفح.',
+      modules: [
+        {
+          id: 'otc-001',
+          heading: 'كيف يعمل ضمان OTC',
+          body: 'OTC MIR نظام تداول بين الأقران بدون بورصة مركزية أو رسوم غاز. عند إنشاء أمر بيع، يُقفل رصيد MIR في ضمان تشفيري أصيل بالمتصفح. يُحرَّر الضمان فقط بتأكيد توقيع دفع المشتري.',
+          tags: ['otc','escrow','p2p'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     zh: {
-      title: '情报提交与投票',
-      summary: '贡献情报项目并赚取 FRS。',
-      items: [
-        { q: '如何提交情报？',           a: '点击 SUBMIT INTEL。填写标题、分析和标签。免费提交；获得投票后 FRS 增加。' },
-        { q: '投票如何运作？',           a: '每次投票花费 1.00000000 MIR。2% 被销毁。98% 归内容创作者。' },
-        { q: '什么是 FRS？',             a: '预测者声誉分数（0–100）。FRS 越高，投票权重和平台影响力越大。' },
-        { q: '我会被隐形封禁吗？',       a: '自动化或机器人式提交模式会被静默标记。以自然人类节奏互动始终安全。' },
+      title:   'P2P场外交易托管使用',
+      summary: '使用浏览器原生加密托管进行点对点MIR交易。',
+      modules: [
+        {
+          id: 'otc-001',
+          heading: '场外交易托管如何运作',
+          body: 'MIR场外交易是完全点对点的交易系统，无需中央交易所或gas费。创建卖单时，您的MIR余额锁定在浏览器原生加密托管中。只有在买方付款签名确认后，托管才会释放。',
+          tags: ['otc','escrow','p2p'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     de: {
-      title: 'Intel-Einreichung & Upvotes',
-      summary: 'Geheimdienstbeiträge leisten und FRS verdienen.',
-      items: [
-        { q: 'Wie reiche ich Intel ein?',  a: 'SUBMIT INTEL anklicken. Headline, Analyse und Tags ausfüllen. Kostenlos; FRS steigt bei Upvotes.' },
-        { q: 'Wie funktionieren Upvotes?', a: 'Jeder Upvote kostet 1.00000000 MIR. 2% wird verbrannt. 98% geht an den Content-Ersteller.' },
-        { q: 'Was ist FRS?',               a: 'Forecaster Reputation Score (0–100). Höherer FRS erhöht Ihr Upvote-Gewicht und Ihren Einfluss.' },
-        { q: 'Kann ich shadowgebannt werden?', a: 'Automatisierte Einreichungsmuster werden still markiert. Natürliche menschliche Interaktion ist immer sicher.' },
+      title:   'P2P OTC-Treuhand Nutzung',
+      summary: 'Peer-to-Peer MIR-Handel mit browsernativem kryptographischen Treuhand.',
+      modules: [
+        {
+          id: 'otc-001',
+          heading: 'Wie OTC-Treuhand funktioniert',
+          body: 'MIR OTC ist ein vollständig Peer-to-Peer-Handelssystem ohne zentrale Börse oder Gasgebühren. Beim Erstellen einer Verkaufsorder wird Ihr MIR-Guthaben in einem browsernativem Treuhand gesperrt. Es wird nur bei bestätigter Käufer-Zahlungssignatur freigegeben.',
+          tags: ['otc','escrow','p2p'],
+          difficulty: 'intermediate',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 4. PoUW MINING
-  // ─────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
+  // 4. PoUW MINING GUIDELINES
+  // ═══════════════════════════════════════════════════════════════════════
   pouw_mining: {
     en: {
-      title: 'PoUW Mining',
-      summary: 'Browser-based Proof-of-Useful-Work mining over 33 years.',
-      items: [
-        { q: 'How do I start mining?',    a: 'Click ⬡ MINE or navigate to Mining Dashboard → START MINING. No setup required.' },
-        { q: 'What is PoUW?',             a: 'Proof-of-Useful-Work: your browser validates CRDT state logs and processes semantic metadata using SubtleCrypto SHA-256.' },
-        { q: 'Will mining drain my battery?', a: 'No. Mobile devices are capped at 5 seconds per cycle and auto-pause when the tab is hidden.' },
-        { q: 'How long does mining last?', a: '33-year lifecycle (2025–2058) across 11 halving epochs of 3 years each. Base reward: 0.5 MIR per block.' },
-        { q: 'What is the halving schedule?', a: 'Block reward halves every 3 years. Epoch 1 (2025–2028): 0.5 MIR. Epoch 2: 0.25 MIR. And so on.' },
-        { q: 'What is Sybil defence?',    a: 'Difficulty scales exponentially if a node submits anomalous volumes, protecting other miners.' },
+      title:   'PoUW Mining Guidelines',
+      summary: 'Proof-of-Useful-Work: 33-year browser mining over 11 halving epochs.',
+      modules: [
+        {
+          id: 'pm-001',
+          heading: 'What is Proof-of-Useful-Work?',
+          body: 'PoUW is MIR\'s mining mechanism. Unlike Bitcoin\'s wasteful hash computation, PoUW validates CRDT state logs and processes semantic analytical metadata using SubtleCrypto SHA-256. Every mining cycle contributes genuine computational value to the network — validating peer data and maintaining ledger integrity.',
+          tags: ['pouw','mining','sha256'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pm-002',
+          heading: 'Starting & Stopping Mining',
+          body: 'Click ⬡ MINE in the navigation bar, or navigate to the Mining Dashboard.\nMining runs as a Web Worker in the background — your browser UI remains fully responsive.\nClick ⬡ MINE again or toggle the mining button to stop.\nMining auto-pauses when your tab is hidden (visibilitychange event) to preserve battery.',
+          tags: ['start','stop','worker'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pm-003',
+          heading: '33-Year Halving Schedule',
+          body: 'Total lifespan: 2025 → 2058 (33 years), 11 epochs of 3 years each.\n\nEpoch 1  (2025–2028): 0.50000000 MIR/block\nEpoch 2  (2028–2031): 0.25000000 MIR/block\nEpoch 3  (2031–2034): 0.12500000 MIR/block\nEpoch 4  (2034–2037): 0.06250000 MIR/block\nEpoch 5  (2037–2040): 0.03125000 MIR/block\nEpochs 6–11: continue halving until 2058.\n\nAll rewards come from the fixed supply of 2,100,000 MIR.',
+          tags: ['halving','epoch','schedule','supply'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pm-004',
+          heading: 'Mobile Battery Protection',
+          body: 'MIR detects iOS/Safari and mobile environments. Mobile caps: max 3–5 seconds CPU per mining cycle. Auto-throttles to prevent thermal throttling and battery drain. The difficulty algorithm dynamically adjusts to keep cycle time within safe limits regardless of device capability.',
+          tags: ['mobile','ios','battery','throttle'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pm-005',
+          heading: 'Sybil Resistance',
+          body: 'If a node broadcasts anomalous transmission volumes, the local difficulty scales exponentially. This protects resource-constrained mobile nodes from network flooding attacks. The system detects IP-level or peer-ID anomalies and applies graduated penalties without requiring central coordination.',
+          tags: ['sybil','difficulty','protection'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'pm-006',
+          heading: 'Mining Rewards & Referral Routing',
+          body: 'Standard block reward: credited directly to your public key address.\nIf you activated your node via a referral Access Key: 50% of your initial 3-second PoUW block rewards are automatically routed to the inviter\'s address as a peer incentive.\nValidation rewards: 50% to Network Rewards Pool, 50% to Admin infrastructure maintenance.',
+          tags: ['rewards','referral','routing'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     fa: {
-      title: 'استخراج PoUW',
-      summary: 'استخراج مبتنی بر مرورگر در طول ۳۳ سال.',
-      items: [
-        { q: 'چگونه شروع به استخراج کنم؟', a: '⬡ MINE را بزنید یا به داشبورد استخراج بروید → START MINING. نیازی به تنظیم نیست.' },
-        { q: 'PoUW چیست؟',              a: 'اثبات کار مفید: مرورگر شما لاگ‌های حالت CRDT را تأیید می‌کند و متادیتای معنایی را با SubtleCrypto SHA-256 پردازش می‌کند.' },
-        { q: 'آیا استخراج باتری را تخلیه می‌کند؟', a: 'خیر. دستگاه‌های موبایل حداکثر ۵ ثانیه در هر چرخه دارند و هنگام مخفی بودن تب به صورت خودکار متوقف می‌شوند.' },
-        { q: 'استخراج چقدر طول می‌کشد؟', a: 'چرخه عمر ۳۳ ساله (۲۰۲۵–۲۰۵۸) در ۱۱ دوره نصف شدن هر ۳ سال. پاداش پایه: ۰.۵ MIR در هر بلوک.' },
-        { q: 'برنامه نصف شدن چیست؟',   a: 'پاداش بلوک هر ۳ سال نصف می‌شود. دوره ۱ (۲۰۲۵–۲۰۲۸): ۰.۵ MIR. دوره ۲: ۰.۲۵ MIR.' },
-        { q: 'دفاع Sybil چیست؟',        a: 'سختی به صورت نمایی افزایش می‌یابد اگر یک گره حجم‌های غیرعادی ارسال کند.' },
+      title:   'راهنمای استخراج PoUW',
+      summary: 'اثبات کار مفید: استخراج مرورگری ۳۳ ساله در ۱۱ دوره نصف شدن.',
+      modules: [
+        {
+          id: 'pm-001',
+          heading: 'اثبات کار مفید چیست؟',
+          body: 'PoUW مکانیزم استخراج MIR است. برخلاف محاسبات هش اتلاف‌کننده بیتکوین، PoUW لاگ‌های حالت CRDT را اعتبارسنجی کرده و متادیتای تحلیلی معنایی را با SubtleCrypto SHA-256 پردازش می‌کند.',
+          tags: ['pouw','mining','sha256'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pm-003',
+          heading: 'برنامه نصف شدن ۳۳ ساله',
+          body: 'طول عمر کل: ۲۰۲۵ → ۲۰۵۸ (۳۳ سال)، ۱۱ دوره ۳ ساله.\n\nدوره ۱ (۲۰۲۵–۲۰۲۸): ۰.۵۰۰۰۰۰۰۰ MIR/بلوک\nدوره ۲ (۲۰۲۸–۲۰۳۱): ۰.۲۵۰۰۰۰۰۰ MIR/بلوک\nدوره ۳ (۲۰۳۱–۲۰۳۴): ۰.۱۲۵۰۰۰۰۰ MIR/بلوک\nدوره ۴ (۲۰۳۴–۲۰۳۷): ۰.۰۶۲۵۰۰۰۰ MIR/بلوک\nدوره ۵ (۲۰۳۷–۲۰۴۰): ۰.۰۳۱۲۵۰۰۰ MIR/بلوک',
+          tags: ['halving','epoch','schedule'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'pm-004',
+          heading: 'محافظت از باتری موبایل',
+          body: 'MIR محیط‌های iOS/Safari و موبایل را تشخیص می‌دهد. حداکثر ۳–۵ ثانیه CPU در هر چرخه استخراج. به صورت خودکار throttle می‌کند تا از throttling حرارتی و تخلیه باتری جلوگیری شود.',
+          tags: ['mobile','ios','battery'],
+          difficulty: 'beginner',
+        },
       ],
     },
     ar: {
-      title: 'تعدين PoUW',
-      summary: 'تعدين قائم على المتصفح على مدى 33 عاماً.',
-      items: [
-        { q: 'كيف أبدأ التعدين؟',       a: 'انقر ⬡ MINE أو انتقل إلى لوحة التعدين ← START MINING. لا يلزم أي إعداد.' },
-        { q: 'ما هو PoUW؟',             a: 'إثبات العمل المفيد: يتحقق متصفحك من سجلات حالة CRDT ويعالج بيانات وصفية دلالية باستخدام SubtleCrypto SHA-256.' },
-        { q: 'هل يستنزف التعدين البطارية؟', a: 'لا. الأجهزة المحمولة محدودة بـ 5 ثوانٍ لكل دورة وتتوقف تلقائياً عند إخفاء التبويب.' },
-        { q: 'كم يستمر التعدين؟',       a: 'دورة حياة 33 عاماً (2025–2058) عبر 11 حقبة تقليص كل 3 سنوات. المكافأة الأساسية: 0.5 MIR لكل كتلة.' },
-        { q: 'ما جدول التقليص؟',        a: 'تنخفض مكافأة الكتلة إلى النصف كل 3 سنوات. الحقبة 1: 0.5 MIR. الحقبة 2: 0.25 MIR.' },
-        { q: 'ما هو دفاع Sybil؟',       a: 'تتصاعد الصعوبة أسياً إذا أرسلت عقدة أحجاماً غير طبيعية، مما يحمي المعدنين الآخرين.' },
+      title:   'إرشادات تعدين PoUW',
+      summary: 'إثبات العمل المفيد: تعدين المتصفح لمدة 33 عاماً عبر 11 حقبة تقليص.',
+      modules: [
+        {
+          id: 'pm-001',
+          heading: 'ما هو إثبات العمل المفيد؟',
+          body: 'PoUW آلية تعدين MIR. على عكس حسابات التجزئة المُهدِرة لبيتكوين، يتحقق PoUW من سجلات حالة CRDT ويعالج البيانات الوصفية الدلالية باستخدام SubtleCrypto SHA-256.',
+          tags: ['pouw','mining'],
+          difficulty: 'beginner',
+        },
       ],
     },
     zh: {
-      title: 'PoUW 挖矿',
-      summary: '基于浏览器的33年有用工作量证明挖矿。',
-      items: [
-        { q: '如何开始挖矿？',           a: '点击 ⬡ MINE 或导航到挖矿仪表板 → START MINING。无需设置。' },
-        { q: '什么是 PoUW？',            a: '有用工作量证明：您的浏览器使用 SubtleCrypto SHA-256 验证 CRDT 状态日志并处理语义元数据。' },
-        { q: '挖矿会耗尽电池吗？',       a: '不会。移动设备每次循环最多5秒，标签页隐藏时自动暂停。' },
-        { q: '挖矿持续多久？',           a: '33年生命周期（2025–2058），共11个每3年一次的减半周期。基础奖励：每块0.5 MIR。' },
-        { q: '减半时间表是什么？',       a: '区块奖励每3年减半。第1周期（2025–2028）：0.5 MIR。第2周期：0.25 MIR。' },
-        { q: '什么是女巫防御？',         a: '如果节点提交异常量，难度呈指数增长，保护其他矿工。' },
+      title:   'PoUW挖矿指南',
+      summary: '有用工作量证明：33年浏览器挖矿，11个减半周期。',
+      modules: [
+        {
+          id: 'pm-001',
+          heading: '什么是有用工作量证明？',
+          body: 'PoUW是MIR的挖矿机制。与比特币浪费性哈希计算不同，PoUW使用SubtleCrypto SHA-256验证CRDT状态日志并处理语义分析元数据。',
+          tags: ['pouw','mining'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pm-003',
+          heading: '33年减半时间表',
+          body: '总寿命：2025→2058（33年），11个每3年一次的减半周期。\n\n第1周期(2025-2028): 0.50000000 MIR/块\n第2周期(2028-2031): 0.25000000 MIR/块\n第3周期(2031-2034): 0.12500000 MIR/块',
+          tags: ['halving','epoch'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     de: {
-      title: 'PoUW-Mining',
-      summary: 'Browser-basiertes Mining über 33 Jahre.',
-      items: [
-        { q: 'Wie starte ich das Mining?', a: '⬡ MINE anklicken oder zum Mining-Dashboard → START MINING navigieren. Keine Einrichtung nötig.' },
-        { q: 'Was ist PoUW?',              a: 'Proof-of-Useful-Work: Ihr Browser validiert CRDT-Zustandsprotokolle und verarbeitet semantische Metadaten mit SubtleCrypto SHA-256.' },
-        { q: 'Entleert Mining den Akku?',  a: 'Nein. Mobile Geräte sind auf 5 Sekunden pro Zyklus begrenzt und pausieren automatisch bei verstecktem Tab.' },
-        { q: 'Wie lange dauert Mining?',   a: '33-Jahres-Lebenszyklus (2025–2058) über 11 Halbierungsepochen je 3 Jahre. Basisbelohnung: 0,5 MIR pro Block.' },
-        { q: 'Was ist der Halbierungsplan?', a: 'Blockbelohnung halbiert sich alle 3 Jahre. Epoche 1: 0,5 MIR. Epoche 2: 0,25 MIR.' },
-        { q: 'Was ist Sybil-Abwehr?',      a: 'Schwierigkeit skaliert exponentiell bei anomalen Übertragungsmengen.' },
+      title:   'PoUW Mining-Richtlinien',
+      summary: 'Proof-of-Useful-Work: 33 Jahre Browser-Mining über 11 Halbierungsepochen.',
+      modules: [
+        {
+          id: 'pm-001',
+          heading: 'Was ist Proof-of-Useful-Work?',
+          body: 'PoUW ist MIRs Mining-Mechanismus. Im Gegensatz zu Bitcoins verschwenderischer Hash-Berechnung validiert PoUW CRDT-Zustandsprotokolle und verarbeitet semantische Analysemetadaten mit SubtleCrypto SHA-256.',
+          tags: ['pouw','mining'],
+          difficulty: 'beginner',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 5. TRADING / OTC
-  // ─────────────────────────────────────────────────────────────────────────
-  trading: {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 5. STRATEGIC FORECASTING
+  // ═══════════════════════════════════════════════════════════════════════
+  strategic_forecasting: {
     en: {
-      title: 'OTC Trading & Escrow',
-      summary: 'Peer-to-peer MIR trading with cryptographic escrow.',
-      items: [
-        { q: 'How do I sell MIR?',        a: 'OTC Market → SELL MIR. Enter amount and price. Your balance is locked in cryptographic escrow until the buyer confirms payment.' },
-        { q: 'How do I buy MIR?',         a: 'OTC Market → BUY MIR. Place a buy order. Match with a seller and confirm off-chain payment.' },
-        { q: 'What is the trading fee?',  a: '10% platform fee on AI-facilitated orders routes to the Network Rewards Pool. Peer-direct orders: no fee.' },
-        { q: 'Is there a gas fee?',       a: 'No. MIR runs serverless on a P2P mesh. All escrow is browser-native with no blockchain gas.' },
-        { q: 'What if a trade fails?',    a: 'Admin can cancel a locked escrow order via the Sovereign Terminal. Funds return immediately.' },
+      title:   'Strategic Forecasting & Scenarios',
+      summary: 'Creating, voting, and resolving probability scenarios.',
+      modules: [
+        {
+          id: 'sf-001',
+          heading: 'Creating a Scenario',
+          body: 'Navigate to Scenarios → + NEW SCENARIO.\nRequired fields:\n• Title: Clear, falsifiable statement\n• Description: Supporting analysis\n• Initial probability: 1–99%\n• Horizon: Days until resolution expected\n\nYour initial probability is weighted by your FRS in the consensus calculation.',
+          tags: ['scenario','create','probability'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'sf-002',
+          heading: 'AI Consensus Probability Engine',
+          body: 'Three AI agents (Resident, Macro, Cyber, Geo) compute weighted probability estimates using 6D semantic weight matrices. The consensus is calculated via GPU-accelerated batch scoring (WebGPU or CPU fallback). Agent weights update continuously through Dream State consolidation cycles.',
+          tags: ['ai','consensus','gpu','agents'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'sf-003',
+          heading: 'Ground Truth Resolution',
+          body: 'Only the Sovereign Admin can resolve a scenario as TRUE or FALSE.\nResolution effects:\n• Participants who predicted correctly gain FRS proportional to their stake\n• Participants who predicted incorrectly lose FRS proportional to divergence\n• Admin-overridden probabilities are immune to AI drift\n\nNOTE: MIR forecasts are analytical tools only. They are not financial advice.',
+          tags: ['resolution','ground-truth','frs'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'sf-004',
+          heading: '6D Semantic Weight Matrix',
+          body: 'Each AI agent maintains a 6-dimensional weight vector:\nDim 0: Geographic risk weighting\nDim 1: Economic macro-signal strength\nDim 2: Cyber threat vector sensitivity\nDim 3: Historical precedent alignment\nDim 4: Source credibility factor\nDim 5: Temporal urgency decay\n\nWeights update via EMA (Exponential Moving Average) during each mining cycle and Dream State.',
+          tags: ['semantic','weights','6d','ema'],
+          difficulty: 'advanced',
+        },
       ],
     },
     fa: {
-      title: 'معاملات OTC و امانت',
-      summary: 'معاملات MIR به صورت همتا به همتا با امانت رمزنگاری‌شده.',
-      items: [
-        { q: 'چگونه MIR بفروشم؟',       a: 'بازار OTC → SELL MIR. مقدار و قیمت را وارد کنید. موجودی شما در امانت رمزنگاری‌شده قفل می‌شود تا خریدار پرداخت را تأیید کند.' },
-        { q: 'چگونه MIR بخرم؟',         a: 'بازار OTC → BUY MIR. یک سفارش خرید ثبت کنید. با فروشنده مطابقت دهید و پرداخت خارج از زنجیره را تأیید کنید.' },
-        { q: 'کارمزد معامله چقدر است؟',  a: 'کارمزد ۱۰٪ پلتفرم برای سفارش‌های تسهیل‌شده با AI به استخر پاداش شبکه می‌رود. سفارش‌های مستقیم همتا به همتا: بدون کارمزد.' },
-        { q: 'آیا کارمزد گس وجود دارد؟', a: 'خیر. MIR روی یک مش P2P بدون سرور اجرا می‌شود. بدون کارمزد بلاکچین.' },
-        { q: 'اگر معامله ناموفق باشد؟',  a: 'ادمین می‌تواند یک سفارش امانت قفل شده را از طریق ترمینال حاکمیتی لغو کند. وجوه فوراً بازمی‌گردند.' },
-      ],
-    },
-    ar: {
-      title: 'تداول OTC والضمان',
-      summary: 'تداول MIR بين الأقران مع ضمان تشفيري.',
-      items: [
-        { q: 'كيف أبيع MIR؟',           a: 'سوق OTC ← SELL MIR. أدخل الكمية والسعر. يُقفل رصيدك في ضمان تشفيري حتى يؤكد المشتري الدفع.' },
-        { q: 'كيف أشتري MIR؟',          a: 'سوق OTC ← BUY MIR. ضع أمر شراء. طابق مع بائع وأكّد الدفع خارج السلسلة.' },
-        { q: 'ما رسوم التداول؟',        a: '10% رسوم للمنصة على الأوامر بتسهيل الذكاء الاصطناعي تذهب لمجمع المكافآت. الأوامر المباشرة: بلا رسوم.' },
-        { q: 'هل توجد رسوم غاز؟',       a: 'لا. MIR يعمل بلا خادم على شبكة P2P. لا رسوم بلوكشين.' },
-        { q: 'ماذا لو فشلت الصفقة؟',   a: 'يستطيع المشرف إلغاء أمر ضمان مقفل عبر Terminal السيادي. تعود الأموال فوراً.' },
-      ],
-    },
-    zh: {
-      title: '场外交易与托管',
-      summary: '点对点 MIR 交易，采用加密托管。',
-      items: [
-        { q: '如何出售 MIR？',           a: '场外市场 → SELL MIR。输入数量和价格。您的余额将锁定在加密托管中，直到买方确认付款。' },
-        { q: '如何购买 MIR？',           a: '场外市场 → BUY MIR。下买单。与卖家匹配并确认链下付款。' },
-        { q: '交易费用是多少？',         a: 'AI 协助订单的平台费为10%，归入网络奖励池。点对点直接订单：无费用。' },
-        { q: '有 gas 费吗？',            a: '没有。MIR 在 P2P 网格上无服务器运行。没有区块链 gas 费。' },
-        { q: '如果交易失败怎么办？',     a: '管理员可通过主权终端取消锁定的托管订单。资金立即返还。' },
-      ],
-    },
-    de: {
-      title: 'OTC-Handel & Treuhand',
-      summary: 'Peer-to-Peer-MIR-Handel mit kryptografischem Treuhand.',
-      items: [
-        { q: 'Wie verkaufe ich MIR?',     a: 'OTC-Markt → SELL MIR. Betrag und Preis eingeben. Ihr Guthaben wird in kryptografischem Treuhand gesperrt.' },
-        { q: 'Wie kaufe ich MIR?',        a: 'OTC-Markt → BUY MIR. Kaufauftrag platzieren. Mit Verkäufer abgleichen und Off-Chain-Zahlung bestätigen.' },
-        { q: 'Wie hoch sind die Handelsgebühren?', a: '10% Plattformgebühr für KI-vermittelte Aufträge geht in den Network Rewards Pool. Direkte Peer-Aufträge: keine Gebühr.' },
-        { q: 'Gibt es Gas-Gebühren?',     a: 'Nein. MIR läuft serverlos auf einem P2P-Mesh ohne Blockchain-Gas.' },
-        { q: 'Was wenn ein Trade scheitert?', a: 'Admin kann gesperrte Treuhandaufträge über das Sovereign Terminal stornieren. Gelder kehren sofort zurück.' },
-      ],
-    },
-  },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // 6. CHARTING / SCENARIOS
-  // ─────────────────────────────────────────────────────────────────────────
-  charting: {
-    en: {
-      title: 'Scenarios & Charting',
-      summary: 'Create, vote, and resolve probability scenarios.',
-      items: [
-        { q: 'How do I create a scenario?', a: 'Scenarios tab → + NEW SCENARIO. Enter title, description, initial probability, and horizon (days).' },
-        { q: 'How is consensus probability calculated?', a: 'The 3 AI agents weight-vote using their FRS scores and 6D semantic matrices. GPU-accelerated batch scoring.' },
-        { q: 'Can admin override probability?', a: 'Yes. The Sovereign Terminal command "override scenario_prob [value]|[title]" sets a locked probability.' },
-        { q: 'How does Ground Truth resolution work?', a: 'Admin resolves a scenario as TRUE or FALSE. Accounts that predicted correctly gain FRS; others lose FRS.' },
-      ],
-    },
-    fa: {
-      title: 'سناریوها و نمودارها',
+      title:   'پیش‌بینی استراتژیک و سناریوها',
       summary: 'ایجاد، رأی‌گیری و حل سناریوهای احتمالی.',
-      items: [
-        { q: 'چگونه سناریو ایجاد کنم؟',  a: 'تب سناریوها → + NEW SCENARIO. عنوان، توضیحات، احتمال اولیه و افق (روزها) را وارد کنید.' },
-        { q: 'احتمال اجماع چگونه محاسبه می‌شود؟', a: '۳ عامل AI با استفاده از امتیازات FRS و ماتریس‌های معنایی ۶ بعدی رأی وزنی می‌دهند. امتیازدهی دسته‌ای شتاب‌یافته با GPU.' },
-        { q: 'آیا ادمین می‌تواند احتمال را override کند؟', a: 'بله. دستور ترمینال حاکمیتی "override scenario_prob [value]|[title]" یک احتمال قفل شده تنظیم می‌کند.' },
-        { q: 'حل حقیقت زمینه چگونه کار می‌کند؟', a: 'ادمین یک سناریو را TRUE یا FALSE حل می‌کند. حساب‌هایی که درست پیش‌بینی کرده‌اند FRS می‌گیرند.' },
+      modules: [
+        {
+          id: 'sf-001',
+          heading: 'ایجاد سناریو',
+          body: 'سناریوها → + NEW SCENARIO\nفیلدهای مورد نیاز:\n• عنوان: گزاره شفاف و قابل ابطال\n• توضیحات: تحلیل پشتیبان\n• احتمال اولیه: ۱–۹۹٪\n• افق: روزها تا انتظار حل شدن\n\nاحتمال اولیه شما با FRS شما در محاسبه اجماع وزن‌دهی می‌شود.',
+          tags: ['scenario','create','probability'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'sf-003',
+          heading: 'حل حقیقت زمینه',
+          body: 'فقط ادمین حاکمیتی می‌تواند سناریو را TRUE یا FALSE حل کند.\nتوجه: پیش‌بینی‌های MIR فقط ابزارهای تحلیلی هستند. توصیه مالی نیستند.',
+          tags: ['resolution','ground-truth','frs'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     ar: {
-      title: 'السيناريوهات والرسوم البيانية',
-      summary: 'إنشاء سيناريوهات الاحتمالية والتصويت وحلها.',
-      items: [
-        { q: 'كيف أنشئ سيناريو؟',       a: 'تبويب السيناريوهات ← + NEW SCENARIO. أدخل العنوان والوصف والاحتمال الأولي والأفق.' },
-        { q: 'كيف تُحسب احتمالية الإجماع؟', a: 'يُصوّت 3 وكلاء AI بأوزان باستخدام درجات FRS ومصفوفات دلالية 6 أبعاد. تسجيل دفعة مسرّعة بـ GPU.' },
-        { q: 'هل يستطيع المشرف تجاوز الاحتمالية؟', a: 'نعم. أمر Terminal "override scenario_prob [value]|[title]" يضبط احتمالية مقفولة.' },
-        { q: 'كيف تعمل الحل بالحقيقة الأرضية؟', a: 'يحلّ المشرف السيناريو TRUE أو FALSE. الحسابات التي تنبأت بصحة تكسب FRS.' },
+      title:   'التنبؤ الاستراتيجي والسيناريوهات',
+      summary: 'إنشاء وتصويت وحل سيناريوهات الاحتمالية.',
+      modules: [
+        {
+          id: 'sf-001',
+          heading: 'إنشاء سيناريو',
+          body: 'السيناريوهات ← + NEW SCENARIO\nالحقول المطلوبة: عنوان واضح قابل للدحض، وصف، احتمالية أولية 1-99%، الأفق الزمني بالأيام.\n\nملاحظة: توقعات MIR أدوات تحليلية فقط. ليست نصائح مالية.',
+          tags: ['scenario','create'],
+          difficulty: 'beginner',
+        },
       ],
     },
     zh: {
-      title: '情景与图表',
-      summary: '创建、投票并解决概率情景。',
-      items: [
-        { q: '如何创建情景？',           a: '情景标签 → + NEW SCENARIO。输入标题、描述、初始概率和时间跨度（天）。' },
-        { q: '共识概率如何计算？',       a: '3个AI代理使用FRS分数和6D语义矩阵进行加权投票。GPU加速批量评分。' },
-        { q: '管理员可以覆盖概率吗？',   a: '可以。主权终端命令 "override scenario_prob [值]|[标题]" 设置锁定概率。' },
-        { q: '地面真相解决如何运作？',   a: '管理员将情景解决为 TRUE 或 FALSE。预测正确的账户获得 FRS；其他则失去。' },
+      title:   '战略预测与情景',
+      summary: '创建、投票和解决概率情景。',
+      modules: [
+        {
+          id: 'sf-001',
+          heading: '创建情景',
+          body: '导航至情景 → + NEW SCENARIO\n必填字段：清晰可证伪的标题、描述、初始概率(1-99%)、预计解决的天数。\n\n注意：MIR预测仅为分析工具，不构成财务建议。',
+          tags: ['scenario','create'],
+          difficulty: 'beginner',
+        },
       ],
     },
     de: {
-      title: 'Szenarien & Diagramme',
-      summary: 'Wahrscheinlichkeitsszenarien erstellen, abstimmen und lösen.',
-      items: [
-        { q: 'Wie erstelle ich ein Szenario?', a: 'Szenarien-Tab → + NEW SCENARIO. Titel, Beschreibung, Anfangswahrscheinlichkeit und Horizont eingeben.' },
-        { q: 'Wie wird Konsenswahrscheinlichkeit berechnet?', a: '3 KI-Agenten wählen gewichtet mit FRS-Scores und 6D-Matrizen. GPU-beschleunigte Batch-Bewertung.' },
-        { q: 'Kann Admin die Wahrscheinlichkeit überschreiben?', a: 'Ja. Sovereign-Terminal-Befehl "override scenario_prob [Wert]|[Titel]" setzt gesperrte Wahrscheinlichkeit.' },
-        { q: 'Wie funktioniert Ground-Truth-Auflösung?', a: 'Admin löst Szenario als TRUE oder FALSE auf. Richtig vorhersagende Konten gewinnen FRS.' },
+      title:   'Strategische Prognose & Szenarien',
+      summary: 'Szenarien erstellen, abstimmen und auflösen.',
+      modules: [
+        {
+          id: 'sf-001',
+          heading: 'Szenario erstellen',
+          body: 'Szenarien → + NEW SCENARIO\nPflichtfelder: Klare, falsifizierbare Aussage, Beschreibung, Anfangswahrscheinlichkeit 1–99%, Horizont in Tagen.\n\nHINWEIS: MIR-Prognosen sind ausschließlich Analysewerkzeuge. Keine Finanzberatung.',
+          tags: ['scenario','create'],
+          difficulty: 'beginner',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 7. SUPPORT
-  // ─────────────────────────────────────────────────────────────────────────
-  support: {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 6. SOCIAL INTERACTION
+  // ═══════════════════════════════════════════════════════════════════════
+  social_interaction: {
     en: {
-      title: 'Platform Support',
-      summary: 'Troubleshooting common issues.',
-      items: [
-        { q: 'Site not loading?',          a: 'Check DevTools Console (F12). If you see "failed to load" errors, ensure all .js files are in the GitHub repo root alongside index.html.' },
-        { q: 'Sync not working?',          a: 'Admin Terminal → githubconfig <owner> <repo> <path> <token>. Then type githubsync.' },
-        { q: 'Balance shows zero?',        a: 'Registration awards 10 MIR. If balance is still zero, check if localStorage has been cleared. Balance is stored locally.' },
-        { q: 'Mining not starting?',       a: 'Ensure you are on HTTPS. PoUW requires SubtleCrypto which is only available on secure origins.' },
-        { q: 'AI agents not responding?',  a: 'Set your Anthropic API key: Admin Terminal → apikey <your-key>. Without a key, agents output offline placeholder text.' },
+      title:   'Social Interaction — Intel & Voting',
+      summary: 'Submitting intelligence, upvoting, and community mechanics.',
+      modules: [
+        {
+          id: 'si-001',
+          heading: 'Submitting Intelligence',
+          body: 'Navigate to Feed → SUBMIT INTEL.\nFields: Headline, Analysis, Tags (comma-separated).\nCost: Free. Your item enters the global CRDT feed and is visible to all peers.\nFRS impact: Each upvote your item receives increases your FRS by a weighted delta.',
+          tags: ['intel','submit','feed'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'si-002',
+          heading: 'Upvote Mechanics',
+          body: 'Cost: 1.00000000 MIR per upvote.\n2% burned (0.02 MIR) — permanent deflation.\n98% to creator (0.98 MIR).\n\nUpvote weight scales with your FRS:\nFRS 0–25: weight × 0.5\nFRS 26–50: weight × 1.0 (base)\nFRS 51–75: weight × 1.5\nFRS 76–100: weight × 2.0\n\nHigh-FRS users have disproportionate influence on consensus calculations.',
+          tags: ['upvote','frs','weight','deflation'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'si-003',
+          heading: 'Shadowban System',
+          body: 'The platform monitors interaction telemetry: input speed, micro-timing patterns, copy-paste behaviour. Profiles matching automated or non-human signatures are silently flagged with shadowbanned:true. Shadowbanned accounts see 100% success on all their actions, but the mesh synchronisation layer silently discards their payloads. This preserves ledger integrity without confrontation.',
+          tags: ['shadowban','telemetry','quality'],
+          difficulty: 'advanced',
+        },
       ],
     },
     fa: {
-      title: 'پشتیبانی پلتفرم',
-      summary: 'رفع مشکلات رایج.',
-      items: [
-        { q: 'سایت بارگذاری نمی‌شود؟',   a: 'کنسول DevTools (F12) را بررسی کنید. اگر خطاهای "failed to load" می‌بینید، اطمینان حاصل کنید همه فایل‌های .js در ریشه repo GitHub کنار index.html هستند.' },
-        { q: 'همگام‌سازی کار نمی‌کند؟',  a: 'ترمینال ادمین → githubconfig <owner> <repo> <path> <token>. سپس githubsync تایپ کنید.' },
-        { q: 'موجودی صفر نشان می‌دهد؟',  a: 'ثبت‌نام ۱۰ MIR اعطا می‌کند. اگر موجودی هنوز صفر است، بررسی کنید localStorage پاک نشده باشد.' },
-        { q: 'استخراج شروع نمی‌شود؟',    a: 'مطمئن شوید روی HTTPS هستید. PoUW به SubtleCrypto نیاز دارد که فقط در origins امن در دسترس است.' },
-        { q: 'عوامل AI پاسخ نمی‌دهند؟',  a: 'کلید API Anthropic را تنظیم کنید: ترمینال ادمین → apikey <your-key>. بدون کلید، عوامل متن جایگزین آفلاین خروجی می‌دهند.' },
+      title:   'تعامل اجتماعی — اطلاعات و رأی‌دهی',
+      summary: 'ارسال اطلاعات، رأی مثبت و مکانیک‌های جامعه.',
+      modules: [
+        {
+          id: 'si-001',
+          heading: 'ارسال اطلاعات',
+          body: 'خوراک → SUBMIT INTEL\nفیلدها: عنوان، تحلیل، برچسب‌ها.\nهزینه: رایگان. آیتم شما وارد خوراک CRDT جهانی می‌شود.',
+          tags: ['intel','submit','feed'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'si-002',
+          heading: 'مکانیک رأی مثبت',
+          body: 'هزینه: ۱.۰۰۰۰۰۰۰۰ MIR در هر رأی\n۲٪ سوزانده می‌شود (۰.۰۲ MIR)\n۹۸٪ به سازنده می‌رسد (۰.۹۸ MIR)\n\nوزن رأی با FRS مقیاس می‌شود:\nFRS 0–25: وزن × ۰.۵\nFRS 26–50: وزن × ۱.۰\nFRS 51–75: وزن × ۱.۵\nFRS 76–100: وزن × ۲.۰',
+          tags: ['upvote','frs','weight'],
+          difficulty: 'intermediate',
+        },
       ],
     },
     ar: {
-      title: 'دعم المنصة',
-      summary: 'استكشاف المشكلات الشائعة وإصلاحها.',
-      items: [
-        { q: 'الموقع لا يتحمل؟',         a: 'افحص وحدة تحكم DevTools (F12). إذا رأيت أخطاء "failed to load"، تأكد من وجود جميع ملفات .js في مجلد repo الجذر مع index.html.' },
-        { q: 'المزامنة لا تعمل؟',        a: 'Terminal الإدارة ← githubconfig <owner> <repo> <path> <token>. ثم اكتب githubsync.' },
-        { q: 'الرصيد يظهر صفراً؟',       a: 'يمنح التسجيل 10 MIR. إذا لا يزال الرصيد صفراً، تحقق من عدم مسح localStorage.' },
-        { q: 'التعدين لا يبدأ؟',         a: 'تأكد من استخدام HTTPS. يتطلب PoUW SubtleCrypto المتاح فقط على الأصول الآمنة.' },
-        { q: 'وكلاء AI لا يستجيبون؟',    a: 'عيّن مفتاح Anthropic API: Terminal ← apikey <your-key>. بدون مفتاح، يُخرج الوكلاء نصاً بديلاً.' },
+      title:   'التفاعل الاجتماعي — المعلومات والتصويت',
+      summary: 'تقديم المعلومات والتصويت وميكانيكا المجتمع.',
+      modules: [
+        {
+          id: 'si-001',
+          heading: 'تقديم المعلومات',
+          body: 'التغذية ← SUBMIT INTEL\nالحقول: العنوان، التحليل، العلامات.\nالتكلفة: مجانية.',
+          tags: ['intel','submit'],
+          difficulty: 'beginner',
+        },
       ],
     },
     zh: {
-      title: '平台支持',
-      summary: '常见问题故障排查。',
-      items: [
-        { q: '网站无法加载？',            a: '检查 DevTools 控制台（F12）。如果看到 "failed to load" 错误，确保所有 .js 文件与 index.html 一起位于 GitHub repo 根目录。' },
-        { q: '同步不工作？',             a: '管理员终端 → githubconfig <owner> <repo> <path> <token>。然后输入 githubsync。' },
-        { q: '余额显示为零？',           a: '注册奖励10 MIR。如果余额仍为零，检查 localStorage 是否被清除。' },
-        { q: '挖矿无法启动？',           a: '确保在 HTTPS 上。PoUW 需要 SubtleCrypto，仅在安全来源上可用。' },
-        { q: 'AI 代理不响应？',          a: '设置您的 Anthropic API 密钥：管理员终端 → apikey <your-key>。没有密钥，代理输出离线占位符文本。' },
+      title:   '社交互动——情报与投票',
+      summary: '提交情报、投票和社区机制。',
+      modules: [
+        {
+          id: 'si-001',
+          heading: '提交情报',
+          body: '导航至动态 → SUBMIT INTEL\n字段：标题、分析、标签（逗号分隔）。费用：免费。',
+          tags: ['intel','submit'],
+          difficulty: 'beginner',
+        },
       ],
     },
     de: {
-      title: 'Plattform-Support',
-      summary: 'Häufige Probleme beheben.',
-      items: [
-        { q: 'Website lädt nicht?',       a: 'DevTools-Konsole prüfen (F12). Bei "failed to load"-Fehlern: Alle .js-Dateien müssen im GitHub-Repo-Root neben index.html liegen.' },
-        { q: 'Sync funktioniert nicht?',  a: 'Admin-Terminal → githubconfig <owner> <repo> <path> <token>. Dann githubsync eingeben.' },
-        { q: 'Guthaben zeigt null?',      a: 'Registrierung vergibt 10 MIR. Falls Guthaben weiterhin null: prüfen ob localStorage gelöscht wurde.' },
-        { q: 'Mining startet nicht?',     a: 'Sicherstellen, dass HTTPS verwendet wird. PoUW benötigt SubtleCrypto, nur auf sicheren Ursprüngen verfügbar.' },
-        { q: 'KI-Agenten antworten nicht?', a: 'Anthropic-API-Schlüssel setzen: Admin-Terminal → apikey <ihr-schlüssel>. Ohne Schlüssel geben Agenten Offline-Platzhaltertext aus.' },
+      title:   'Soziale Interaktion — Intel & Abstimmung',
+      summary: 'Geheimdienstbeiträge, Upvotes und Community-Mechaniken.',
+      modules: [
+        {
+          id: 'si-001',
+          heading: 'Intel einreichen',
+          body: 'Feed → SUBMIT INTEL\nFelder: Headline, Analyse, Tags. Kostenlos.',
+          tags: ['intel','submit'],
+          difficulty: 'beginner',
+        },
       ],
     },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // 8. PRIVATE KEY SECURITY — MANDATORY SECURITY WARNING IN ALL LANGUAGES
-  // ─────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
+  // 7. PRIVATE KEY SECURITY
+  // ═══════════════════════════════════════════════════════════════════════
   private_key_security: {
     en: {
       title: 'Private Key Security',
-      WARNING: '⚠ CRITICAL SECURITY WARNING: Your private key is the ONLY way to access your MIR account. MIR is fully decentralised — there is NO password reset, NO customer support, and NO recovery mechanism. If you lose your private key, your account and all funds are PERMANENTLY and IRRECOVERABLY LOST. Never share your private key with anyone. Never enter it on any website other than this platform. Never store it in cloud services, email, or screenshots.',
-      items: [
-        { q: 'Where should I store my private key?', a: 'Offline only. Write it on paper and store in a physically secure location. Optionally use a hardware password manager (KeePass, Bitwarden local vault). Never in cloud storage.' },
-        { q: 'What does my private key look like?', a: 'A Base64-encoded string (ED25519 PKCS#8 format), approximately 110 characters long.' },
-        { q: 'What is my public key for?',         a: 'Your public key is your address — share it freely for others to send MIR or upvote your content.' },
-        { q: 'Can I change my private key?',       a: 'No. Your key pair is mathematically fixed. Generating a new pair creates a brand new account.' },
-        { q: 'What if someone gets my private key?', a: 'They gain full and immediate control of your account and funds. There is no way to reverse or block this. Generate a new key pair immediately and transfer any remaining funds.' },
+      WARNING: 'CRITICAL: Your private key is the ONLY way to access your MIR account. MIR is fully decentralised — there is NO password reset, NO customer support recovery, and NO exception. If you lose your private key, your account and ALL funds are PERMANENTLY and IRRECOVERABLY LOST. Never share it. Never store it in cloud services, email, or screenshots.',
+      modules: [
+        {
+          id: 'pk-001',
+          heading: 'Storing Your Private Key Safely',
+          body: 'Recommended: Write it on paper and store in a physically secure location (safe, safety deposit box).\nSecure digital: Use MIR\'s built-in EXPORT BACKUP (AES-256-GCM encrypted .json file) with a strong password.\nNever: Cloud storage, email, messaging apps, screenshots, browser autofill, shared computers.',
+          tags: ['storage','backup','security'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'pk-002',
+          heading: 'Encrypted Backup Export',
+          body: 'Navigate to Wallet → EXPORT or use HUD settings.\nEnter a strong backup password (min 8 chars, ideally 20+).\nDownload: MIR_IDENTITY_[TIMESTAMP].json\nFile contains: { pub, priv_encrypted, salt, iv, version } — private key is AES-256-GCM encrypted.\nThe file is safe to store in cloud services — decryption requires BOTH the file AND your password.',
+          tags: ['backup','export','aes-gcm'],
+          difficulty: 'beginner',
+        },
       ],
     },
     fa: {
       title: 'امنیت کلید خصوصی',
-      WARNING: '⚠ هشدار امنیتی حیاتی: کلید خصوصی شما تنها راه دسترسی به حساب MIR شماست. MIR کاملاً غیرمتمرکز است — بازنشانی رمز عبور، پشتیبانی مشتری یا مکانیزم بازیابی وجود ندارد. اگر کلید خصوصی خود را گم کنید، حساب و تمام وجوه شما برای همیشه و غیرقابل بازیابی از بین خواهد رفت. هرگز کلید خصوصی خود را با کسی به اشتراک نگذارید. هرگز آن را در هیچ وب‌سایتی جز این پلتفرم وارد نکنید. هرگز آن را در سرویس‌های ابری، ایمیل یا اسکرین‌شات‌ها ذخیره نکنید.',
-      items: [
-        { q: 'کلید خصوصی‌ام را کجا ذخیره کنم؟', a: 'فقط آفلاین. آن را روی کاغذ بنویسید و در مکانی امن نگه دارید. هرگز در فضای ابری.' },
-        { q: 'کلید خصوصی‌ام چگونه به نظر می‌رسد؟', a: 'یک رشته Base64 (فرمت ED25519 PKCS#8) با طول تقریبی ۱۱۰ کاراکتر.' },
-        { q: 'کلید عمومی‌ام برای چیست؟',        a: 'کلید عمومی شما آدرس شماست — آزادانه به اشتراک بگذارید.' },
-        { q: 'آیا می‌توانم کلید خصوصی‌ام را تغییر دهم؟', a: 'خیر. جفت کلید شما ریاضی ثابت است. ایجاد جفت کلید جدید، یک حساب جدید می‌سازد.' },
-        { q: 'اگر کسی کلید خصوصی‌ام را بگیرد؟', a: 'کنترل کامل حساب و وجوه شما را به دست می‌گیرد. هیچ راهی برای معکوس یا مسدود کردن این وجود ندارد.' },
+      WARNING: 'هشدار حیاتی: کلید خصوصی شما تنها راه دسترسی به حساب MIR است. اگر آن را گم کنید، حساب و تمام وجوه برای همیشه از دست می‌روند. هرگز به اشتراک نگذارید.',
+      modules: [
+        {
+          id: 'pk-001',
+          heading: 'ذخیره امن کلید خصوصی',
+          body: 'توصیه شده: روی کاغذ بنویسید در مکان امن.\nامن دیجیتال: از EXPORT BACKUP داخلی MIR (فایل .json رمزگذاری شده با AES-256-GCM) با رمز قوی استفاده کنید.\nهرگز: فضای ابری، ایمیل، برنامه‌های پیام‌رسان، اسکرین‌شات.',
+          tags: ['storage','backup'],
+          difficulty: 'beginner',
+        },
       ],
     },
     ar: {
       title: 'أمان المفتاح الخاص',
-      WARNING: '⚠ تحذير أمني بالغ الأهمية: مفتاحك الخاص هو السبيل الوحيد للوصول إلى حساب MIR. MIR لامركزي كلياً — لا إعادة تعيين كلمة مرور، ولا دعم عملاء، ولا آلية استرداد. إذا فقدت مفتاحك الخاص، يُفقد حسابك وجميع أموالك بصفة دائمة ولا يمكن استردادها. لا تشارك مفتاحك الخاص مع أي أحد. لا تُدخله في أي موقع آخر غير هذه المنصة. لا تحفظه في خدمات سحابية أو بريد إلكتروني أو لقطات شاشة.',
-      items: [
-        { q: 'أين أحفظ مفتاحي الخاص؟',     a: 'في وضع غير متصل فقط. اكتبه على ورق واحفظه في مكان آمن. لا تستخدم أبداً التخزين السحابي.' },
-        { q: 'كيف يبدو مفتاحي الخاص؟',      a: 'سلسلة Base64 (تنسيق ED25519 PKCS#8)، طولها نحو 110 أحرف.' },
-        { q: 'ما فائدة مفتاحي العام؟',        a: 'مفتاحك العام هو عنوانك — شاركه بحرية ليرسل الآخرون MIR.' },
-        { q: 'هل يمكنني تغيير مفتاحي الخاص؟', a: 'لا. زوج مفاتيحك محدد رياضياً. إنشاء زوج جديد يُنشئ حساباً جديداً كلياً.' },
-        { q: 'ماذا لو حصل شخص ما على مفتاحي؟', a: 'يحصل على سيطرة كاملة على حسابك. لا يوجد طريقة لعكس ذلك.' },
+      WARNING: 'تحذير حرج: مفتاحك الخاص هو السبيل الوحيد للوصول لحساب MIR. إذا فقدته، يضيع حسابك وجميع أموالك إلى الأبد. لا تشاركه أبداً.',
+      modules: [
+        {
+          id: 'pk-001',
+          heading: 'تخزين مفتاحك الخاص بأمان',
+          body: 'الموصى به: اكتبه على ورق في مكان آمن.\nرقمي آمن: استخدم EXPORT BACKUP المدمج (ملف .json مشفر AES-256-GCM).\nلا تستخدم: التخزين السحابي، البريد الإلكتروني، تطبيقات المراسلة.',
+          tags: ['storage','backup'],
+          difficulty: 'beginner',
+        },
       ],
     },
     zh: {
       title: '私钥安全',
-      WARNING: '⚠ 严重安全警告：您的私钥是访问 MIR 账户的唯一方式。MIR 完全去中心化——没有密码重置、没有客户支持、没有恢复机制。如果您丢失私钥，您的账户和所有资金将永久且无法恢复地丢失。切勿与任何人分享您的私钥。切勿在本平台以外的任何网站上输入它。切勿将其存储在云服务、电子邮件或截图中。',
-      items: [
-        { q: '我应该在哪里存储私钥？',       a: '仅离线存储。将其写在纸上并存放在物理安全的地方。切勿使用云存储。' },
-        { q: '私钥长什么样？',              a: 'Base64编码字符串（ED25519 PKCS#8格式），约110个字符长。' },
-        { q: '公钥有什么用途？',            a: '您的公钥是您的地址——可自由分享，让他人发送 MIR 或为您的内容投票。' },
-        { q: '我可以更改私钥吗？',          a: '不能。您的密钥对在数学上是固定的。生成新密钥对会创建全新账户。' },
-        { q: '如果有人获得了我的私钥？',    a: '他们获得您账户和资金的完全控制权。没有办法撤销或阻止这种情况。' },
+      WARNING: '严重警告：您的私钥是访问MIR账户的唯一方式。如果丢失，您的账户和所有资金将永久且无法恢复地丢失。切勿分享。',
+      modules: [
+        {
+          id: 'pk-001',
+          heading: '安全存储私钥',
+          body: '推荐：写在纸上存放在物理安全位置。\n安全数字：使用MIR内置EXPORT BACKUP（AES-256-GCM加密的.json文件）配合强密码。\n切勿：云存储、电子邮件、截图。',
+          tags: ['storage','backup'],
+          difficulty: 'beginner',
+        },
       ],
     },
     de: {
       title: 'Sicherheit des privaten Schlüssels',
-      WARNING: '⚠ KRITISCHE SICHERHEITSWARNUNG: Ihr privater Schlüssel ist der EINZIGE Weg auf Ihr MIR-Konto. MIR ist vollständig dezentralisiert — es gibt KEIN Passwort-Reset, KEINEN Kundensupport und KEINEN Wiederherstellungsmechanismus. Wenn Sie Ihren privaten Schlüssel verlieren, sind Ihr Konto und alle Gelder DAUERHAFT und UNWIDERRUFLICH VERLOREN. Teilen Sie Ihren privaten Schlüssel niemals mit jemandem. Geben Sie ihn niemals auf einer anderen Website als dieser Plattform ein. Speichern Sie ihn niemals in Cloud-Diensten, E-Mails oder Screenshots.',
-      items: [
-        { q: 'Wo soll ich meinen privaten Schlüssel speichern?', a: 'Nur offline. Auf Papier aufschreiben und an einem physisch sicheren Ort aufbewahren. Niemals in Cloud-Speicher.' },
-        { q: 'Wie sieht mein privater Schlüssel aus?', a: 'Ein Base64-kodierter String (ED25519 PKCS#8), ca. 110 Zeichen lang.' },
-        { q: 'Wofür ist mein öffentlicher Schlüssel?', a: 'Ihr öffentlicher Schlüssel ist Ihre Adresse — frei teilbar damit andere MIR senden können.' },
-        { q: 'Kann ich meinen privaten Schlüssel ändern?', a: 'Nein. Ihr Schlüsselpaar ist mathematisch festgelegt. Ein neues Paar erstellt ein völlig neues Konto.' },
-        { q: 'Was wenn jemand meinen Schlüssel bekommt?', a: 'Er erhält die volle und sofortige Kontrolle über Ihr Konto. Es gibt keine Möglichkeit, dies rückgängig zu machen.' },
-      ],
-    },
-  },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // 9. PUBLIC KEY IDENTITY
-  // ─────────────────────────────────────────────────────────────────────────
-  public_key_identity: {
-    en: {
-      title: 'Public Key & Identity',
-      summary: 'Your public key is your on-platform identity.',
-      items: [
-        { q: 'What is my public key?',     a: 'An ED25519 public key in hex format. It uniquely identifies you on the MIR network and is derived from your private key.' },
-        { q: 'Is my public key safe to share?', a: 'Yes. Public keys are designed to be shared. They cannot be used to access your account.' },
-        { q: 'How is my identity verified?', a: 'Every action you take is cryptographically signed with your private key. Peers verify your signature using your public key.' },
-        { q: 'What is the Admin public key?', a: 'The Admin (Sovereign) key is set via Admin Terminal → SET KEY. It grants SOVEREIGN_PRIORITY = Infinity across all CRDT operations.' },
-        { q: 'How do I share my address?', a: 'Copy your public key from the Wallet modal. It is safe to post publicly on forums and trading platforms.' },
-      ],
-    },
-    fa: {
-      title: 'کلید عمومی و هویت',
-      summary: 'کلید عمومی شما هویت درون پلتفرم شماست.',
-      items: [
-        { q: 'کلید عمومی من چیست؟',      a: 'یک کلید عمومی ED25519 در فرمت hex. به طور منحصر به فرد شما را در شبکه MIR شناسایی می‌کند.' },
-        { q: 'آیا به اشتراک گذاشتن کلید عمومی‌ام امن است؟', a: 'بله. کلیدهای عمومی برای اشتراک‌گذاری طراحی شده‌اند و نمی‌توانند برای دسترسی به حساب شما استفاده شوند.' },
-        { q: 'هویت من چگونه تأیید می‌شود؟', a: 'هر اقدامی که انجام می‌دهید با کلید خصوصی شما رمزنگاری‌شده امضا می‌شود.' },
-        { q: 'کلید عمومی ادمین چیست؟',    a: 'کلید ادمین از طریق ترمینال ادمین → SET KEY تنظیم می‌شود. این SOVEREIGN_PRIORITY = Infinity در تمام عملیات‌های CRDT اعطا می‌کند.' },
-        { q: 'چگونه آدرسم را به اشتراک بگذارم؟', a: 'کلید عمومی خود را از پنجره Wallet کپی کنید. امن است که آن را در انجمن‌ها و پلتفرم‌های معاملاتی منتشر کنید.' },
-      ],
-    },
-    ar: {
-      title: 'المفتاح العام والهوية',
-      summary: 'مفتاحك العام هو هويتك على المنصة.',
-      items: [
-        { q: 'ما هو مفتاحي العام؟',       a: 'مفتاح ED25519 عام بصيغة hex. يُعرّفك بشكل فريد على شبكة MIR.' },
-        { q: 'هل من الآمن مشاركة مفتاحي العام؟', a: 'نعم. المفاتيح العامة مُصمَّمة للمشاركة ولا يمكن استخدامها للوصول لحسابك.' },
-        { q: 'كيف تُتحقق هويتي؟',         a: 'كل إجراء تقوم به يُوقَّع تشفيرياً بمفتاحك الخاص.' },
-        { q: 'ما هو مفتاح المشرف العام؟',  a: 'يُعيَّن مفتاح المشرف عبر Terminal ← SET KEY. يمنح SOVEREIGN_PRIORITY = Infinity.' },
-        { q: 'كيف أشارك عنواني؟',         a: 'انسخ مفتاحك العام من نافذة المحفظة. آمن نشره على المنتديات ومنصات التداول.' },
-      ],
-    },
-    zh: {
-      title: '公钥与身份',
-      summary: '您的公钥是您在平台上的身份。',
-      items: [
-        { q: '我的公钥是什么？',            a: '十六进制格式的 ED25519 公钥。它在 MIR 网络上唯一标识您，由私钥派生。' },
-        { q: '分享公钥安全吗？',            a: '是的。公钥是为共享而设计的，不能用于访问您的账户。' },
-        { q: '我的身份如何被验证？',        a: '您的每个操作都用私钥进行加密签名。对等节点使用您的公钥验证您的签名。' },
-        { q: '管理员公钥是什么？',          a: '管理员密钥通过管理员终端 → SET KEY 设置。赋予所有 CRDT 操作 SOVEREIGN_PRIORITY = Infinity。' },
-        { q: '如何分享我的地址？',          a: '从钱包弹窗复制您的公钥。在论坛和交易平台上公开发布是安全的。' },
-      ],
-    },
-    de: {
-      title: 'Öffentlicher Schlüssel & Identität',
-      summary: 'Ihr öffentlicher Schlüssel ist Ihre Plattform-Identität.',
-      items: [
-        { q: 'Was ist mein öffentlicher Schlüssel?', a: 'Ein ED25519-Schlüssel im Hex-Format. Er identifiziert Sie eindeutig im MIR-Netzwerk.' },
-        { q: 'Ist das Teilen meines öffentlichen Schlüssels sicher?', a: 'Ja. Öffentliche Schlüssel sind zum Teilen gedacht und können nicht für den Kontozugang verwendet werden.' },
-        { q: 'Wie wird meine Identität verifiziert?', a: 'Jede Aktion wird kryptografisch mit Ihrem privaten Schlüssel signiert.' },
-        { q: 'Was ist der Admin-öffentliche Schlüssel?', a: 'Der Admin-Schlüssel wird über Admin-Terminal → SET KEY gesetzt. Gewährt SOVEREIGN_PRIORITY = Infinity.' },
-        { q: 'Wie teile ich meine Adresse?',  a: 'Öffentlichen Schlüssel aus dem Wallet-Modal kopieren. Sicher auf Foren und Handelsplattformen zu posten.' },
+      WARNING: 'KRITISCH: Ihr privater Schlüssel ist der EINZIGE Zugang zu Ihrem MIR-Konto. Bei Verlust sind Konto und Guthaben DAUERHAFT verloren. Niemals teilen.',
+      modules: [
+        {
+          id: 'pk-001',
+          heading: 'Privaten Schlüssel sicher aufbewahren',
+          body: 'Empfohlen: Auf Papier an sicherem Ort aufschreiben.\nSichere Digital-Option: EXPORT BACKUP (AES-256-GCM verschlüsselte .json-Datei).\nNie: Cloud-Speicher, E-Mail, Screenshots.',
+          tags: ['storage','backup'],
+          difficulty: 'beginner',
+        },
       ],
     },
   },
