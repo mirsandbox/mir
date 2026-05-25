@@ -1979,13 +1979,19 @@ async function bootstrapApplication() {
 
   // ── Module loading — each import is individually guarded ─────────────
   // A failing module is logged and skipped; the platform degrades gracefully
-  // rather than stalling. All paths use import.meta.url for absolute resolution.
+  // rather than stalling. All paths are relative (./) for subpath hosting.
 
-  const _load = async (label, path, progress) => {
+  // Resolve module paths relative to index.html location.
+  // import.meta.url gives the absolute URL of THIS script (index.html inline module),
+  // which correctly handles subpath hosting like /mir-Platform/.
+  const _base = new URL('.', import.meta.url).href;
+  const _resolve = (file) => _base + file;
+
+  const _load = async (label, file, progress) => {
     bootSetStatus(`Loading ${label}...`);
     bootSetProgress(progress);
     try {
-      const mod = await import(path);
+      const mod = await import(/* @vite-ignore */ _resolve(file));
       console.log(`[BOOT] ${label} loaded`);
       return mod;
     } catch (err) {
@@ -1995,22 +2001,22 @@ async function bootstrapApplication() {
     }
   };
 
-  const IdentityKDF = await _load('identity cryptography',  new URL('./identity_kdf.js', import.meta.url).href,   40);
+  const IdentityKDF = await _load('identity cryptography',  'identity_kdf.js',   40);
   if (IdentityKDF) window.IdentityKDF = IdentityKDF;
 
-  const ResModule   = await _load('resilience layer',       new URL('./resilience.js', import.meta.url).href,     50);
+  const ResModule   = await _load('resilience layer',       'resilience.js',     50);
   if (ResModule) window.ResilienceModule = ResModule;
 
-  const AIEvolution = await _load('AI Evolution engine',    new URL('./ai_evolution.js', import.meta.url).href,   62);
+  const AIEvolution = await _load('AI Evolution engine',    'ai_evolution.js',   62);
   if (AIEvolution) window.AIEvolution = AIEvolution;
 
-  const MeshNetwork = await _load('mesh network layer',     new URL('./mesh_network.js', import.meta.url).href,   72);
+  const MeshNetwork = await _load('mesh network layer',     'mesh_network.js',   72);
   if (MeshNetwork) window.MeshNetwork = MeshNetwork;
 
-  const MeshCRDT    = await _load('CRDT consistency engine',new URL('./mesh_crdt.js', import.meta.url).href,      80);
+  const MeshCRDT    = await _load('CRDT consistency engine','mesh_crdt.js',      80);
   if (MeshCRDT) window.MeshCRDT = MeshCRDT;
 
-  const AIMeta      = await _load('AI meta layer',          new URL('./ai_meta.js', import.meta.url).href,        88);
+  const AIMeta      = await _load('AI meta layer',          'ai_meta.js',        88);
   if (AIMeta) window.AIMeta = AIMeta;
 
   // ── Hand off to application orchestrator ─────────────────────────────

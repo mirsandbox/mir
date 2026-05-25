@@ -1989,7 +1989,7 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
 
   // ── 5b. Initialise Resilience Layer (Recovery & Traffic Shaping) ──────
   try {
-    const ResModule = await import('./resilience.js');
+    const ResModule = await import(new URL('resilience.js', import.meta.url).href);
     _Resilience     = ResModule;
     await ResModule.initResilience({ db: _DB });
     window._mirResilience = ResModule;
@@ -2011,7 +2011,7 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
 
   // ── 5c. Initialise WASM crypto acceleration ──────────────────────────────
   try {
-    const WASMCrypto = await import('./wasm_crypto.js');
+    const WASMCrypto = await import(new URL('wasm_crypto.js', import.meta.url).href);
     window._mirWASM  = WASMCrypto;
     await WASMCrypto.wasmInit();
     const bench = await WASMCrypto.wasmBenchmark();
@@ -2033,7 +2033,7 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
   // window._ENV is set by index.html before any module loads.
   if (window._ENV === undefined || window._ENV.webGPU !== false) {
   try {
-    const GPUMod = await import('./gpu_matrix.js');
+    const GPUMod = await import(new URL('gpu_matrix.js', import.meta.url).href);
     _GPU         = GPUMod;
     window._mirGPU = GPUMod;
     const gpuReady = await GPUMod.gpuInit();
@@ -2042,7 +2042,7 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
 
     // Init data synthesis pipeline with write-back callback
     try {
-      const DSMod = await import('./data_synthesis.js');
+      const DSMod = await import(new URL('data_synthesis.js', import.meta.url).href);
       _DS         = DSMod;
       await DSMod.initDataSynthesis({
         db:  _DB,

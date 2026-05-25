@@ -221,17 +221,12 @@ function _mergeSignals() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function _buildGPUInputs(mergedSignals, currentDB) {
-  // Current agent weight matrix [4][6] — from DB or defaults
-  const DEFAULT_6D = {
-    resident: [0.70, 0.60, 0.55, 0.75, 0.80, 0.65],
-    macro:    [0.50, 0.90, 0.40, 0.70, 0.85, 0.60],
-    cyber:    [0.65, 0.45, 0.95, 0.60, 0.80, 0.75],
-    geo:      [0.90, 0.65, 0.50, 0.90, 0.75, 0.60],
-  };
-
+  // Current agent weight matrix [4][6] — from DB or platform defaults
+  // Single source of truth: read from DB agents; DB was seeded from
+  // DEFAULT_6D in ai_evolution.js, so no local duplicate needed.
   const agentWeights = DS_AGENT_IDS.map(id => {
     const agent = currentDB?.agents?.[id];
-    return agent?.semanticWeights || DEFAULT_6D[id];
+    return agent?.semanticWeights || [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]; // safe default
   });
 
   // Per-agent FRS weights for probability aggregation

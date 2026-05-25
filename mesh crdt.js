@@ -1684,13 +1684,13 @@ const RELAY_ITEM_TTL_MS  = 7 * 24 * 3_600_000;   // 7 days
  * @returns {{ ok: boolean, itemId: string|null, reason: string }}
  */
 function _relayIngestWebhookPayload(payload, source) {
-  // Gate 1: source allowlist
-  const allowed = [
+  // Gate 1: source allowlist — only pre-registered webhook URLs accepted
+  const allowedEndpoints = [
     localStorage.getItem('mir_webhook_twitter'),
     localStorage.getItem('mir_webhook_telegram'),
   ].filter(Boolean);
 
-  if (!allowed.includes(source)) {
+  if (!allowedEndpoints.includes(source)) {
     _crdtLog(`ContentRelay: source not allowlisted — rejected (${source?.slice(0,30)})`, 'warn');
     return { ok: false, itemId: null, reason: 'source_not_allowlisted' };
   }

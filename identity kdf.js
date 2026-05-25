@@ -164,37 +164,45 @@ export function getCapabilities() {
 
 /** SHA-256 digest → hex string */
 export async function sha256Hex(data) {
-  const bytes  = typeof data === 'string' ? strToBytes(data) : data;
-  const digest = await window.crypto.subtle.digest('SHA-256', bytes);
-  return bufToHex(digest);
+  try {
+    const bytes  = typeof data === 'string' ? strToBytes(data) : data;
+    const digest = await window.crypto.subtle.digest('SHA-256', bytes);
+    return bufToHex(digest);
+  } catch { return null; }
 }
 
 /** SHA-256 digest → Uint8Array */
 export async function sha256Bytes(data) {
-  const bytes = typeof data === 'string' ? strToBytes(data) : data;
-  return new Uint8Array(await window.crypto.subtle.digest('SHA-256', bytes));
+  try {
+    const bytes = typeof data === 'string' ? strToBytes(data) : data;
+    return new Uint8Array(await window.crypto.subtle.digest('SHA-256', bytes));
+  } catch { return null; }
 }
 
 // ── HMAC-SHA256 ───────────────────────────────────────────────────────
 
 /** Generate a new 256-bit HMAC key → Base64 */
 export async function generateHMACKey() {
-  const key = await window.crypto.subtle.generateKey(
-    { name: 'HMAC', hash: 'SHA-256', length: 256 }, true, ['sign', 'verify']
-  );
-  const exported = await window.crypto.subtle.exportKey('raw', key);
-  return bytesToB64(new Uint8Array(exported));
+  try {
+      const key = await window.crypto.subtle.generateKey(
+        { name: 'HMAC', hash: 'SHA-256', length: 256 }, true, ['sign', 'verify']
+      );
+      const exported = await window.crypto.subtle.exportKey('raw', key);
+      return bytesToB64(new Uint8Array(exported));
+  } catch { return null; }
 }
 
 /** Sign data with HMAC-SHA256. keyB64 = Base64 raw key. Returns hex. */
 export async function hmacSign(keyB64, data) {
-  const raw      = b64ToBytes(keyB64);
-  const msgBytes = typeof data === 'string' ? strToBytes(data) : data;
-  const key = await window.crypto.subtle.importKey(
-    'raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const sig = await window.crypto.subtle.sign('HMAC', key, msgBytes);
-  return bufToHex(sig);
+  try {
+      const raw      = b64ToBytes(keyB64);
+      const msgBytes = typeof data === 'string' ? strToBytes(data) : data;
+      const key = await window.crypto.subtle.importKey(
+        'raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+      const sig = await window.crypto.subtle.sign('HMAC', key, msgBytes);
+      return bufToHex(sig);
+  } catch { return ''; }
 }
 
 /** Verify HMAC-SHA256 signature. Returns boolean. */
@@ -396,73 +404,75 @@ export async function verifySignature(pubKeyHex, message, sigHex, algo) {
  * @returns {Promise<SovereignKeyPair>}
  */
 export async function deriveSovereignKey(seedPhrase, adminContext = 'MIR-PLATFORM-V2') {
-  await _probeCapabilities();
-  const sc = window.crypto.subtle;
+  try {
+      await _probeCapabilities();
+      const sc = window.crypto.subtle;
 
-  const seedBytes     = strToBytes(seedPhrase);
-  const saltBytes     = strToBytes('MIR-SOVEREIGN-V2:' + adminContext);
-  const contextBytes  = strToBytes('sovereign-override-key');
+      const seedBytes     = strToBytes(seedPhrase);
+      const saltBytes     = strToBytes('MIR-SOVEREIGN-V2:' + adminContext);
+      const contextBytes  = strToBytes('sovereign-override-key');
 
-  // Step 1: PBKDF2 (if available) or SHA-256 stretching
-  let derivedBytes;
-  if (_caps.pbkdf2) {
-    const baseKey = await sc.importKey('raw', seedBytes, { name: 'PBKDF2' }, false, ['deriveBits']);
-    const derived = await sc.deriveBits(
-      { name: 'PBKDF2', salt: saltBytes, iterations: 200_000, hash: 'SHA-256' },
-      baseKey, 256
-    );
-    derivedBytes = new Uint8Array(derived);
-  } else {
-    // SHA-256 stretching fallback (20 rounds)
-    let current = new Uint8Array([...seedBytes, ...saltBytes]);
-    for (let i = 0; i < 20; i++) {
-      current = await sha256Bytes(current);
-    }
-    derivedBytes = current;
-  }
+      // Step 1: PBKDF2 (if available) or SHA-256 stretching
+      let derivedBytes;
+      if (_caps.pbkdf2) {
+        const baseKey = await sc.importKey('raw', seedBytes, { name: 'PBKDF2' }, false, ['deriveBits']);
+        const derived = await sc.deriveBits(
+          { name: 'PBKDF2', salt: saltBytes, iterations: 200_000, hash: 'SHA-256' },
+          baseKey, 256
+        );
+        derivedBytes = new Uint8Array(derived);
+      } else {
+        // SHA-256 stretching fallback (20 rounds)
+        let current = new Uint8Array([...seedBytes, ...saltBytes]);
+        for (let i = 0; i < 20; i++) {
+          current = await sha256Bytes(current);
+        }
+        derivedBytes = current;
+      }
 
-  // Step 2: HKDF expansion (if available) or another SHA-256 pass
-  let finalKeyMaterial;
-  if (_caps.hkdf) {
-    const ikm = await sc.importKey('raw', derivedBytes, { name: 'HKDF' }, false, ['deriveBits']);
-    const expanded = await sc.deriveBits(
-      { name: 'HKDF', hash: 'SHA-256', salt: saltBytes, info: contextBytes },
-      ikm, 256
-    );
-    finalKeyMaterial = new Uint8Array(expanded);
-  } else {
-    const combined   = new Uint8Array([...derivedBytes, ...contextBytes, ...saltBytes]);
-    finalKeyMaterial = await sha256Bytes(combined);
-  }
+      // Step 2: HKDF expansion (if available) or another SHA-256 pass
+      let finalKeyMaterial;
+      if (_caps.hkdf) {
+        const ikm = await sc.importKey('raw', derivedBytes, { name: 'HKDF' }, false, ['deriveBits']);
+        const expanded = await sc.deriveBits(
+          { name: 'HKDF', hash: 'SHA-256', salt: saltBytes, info: contextBytes },
+          ikm, 256
+        );
+        finalKeyMaterial = new Uint8Array(expanded);
+      } else {
+        const combined   = new Uint8Array([...derivedBytes, ...contextBytes, ...saltBytes]);
+        finalKeyMaterial = await sha256Bytes(combined);
+      }
 
-  // Step 3: Use finalKeyMaterial as Ed25519 seed (or HMAC key)
-  // Ed25519 in Web Crypto doesn't support raw import from a seed directly,
-  // so we derive a PKCS#8-equivalent structure and use HMAC as the signing
-  // primitive when Ed25519 import isn't available.
+      // Step 3: Use finalKeyMaterial as Ed25519 seed (or HMAC key)
+      // Ed25519 in Web Crypto doesn't support raw import from a seed directly,
+      // so we derive a PKCS#8-equivalent structure and use HMAC as the signing
+      // primitive when Ed25519 import isn't available.
 
-  const pubKeyHex   = await sha256Hex(finalKeyMaterial);          // 32-byte fingerprint
-  const privKeyB64  = bytesToB64(finalKeyMaterial);               // 32 bytes of key material
-  const sovereignId = `SOVEREIGN:${pubKeyHex.slice(0, 24).toUpperCase()}`;
+      const pubKeyHex   = await sha256Hex(finalKeyMaterial);          // 32-byte fingerprint
+      const privKeyB64  = bytesToB64(finalKeyMaterial);               // 32 bytes of key material
+      const sovereignId = `SOVEREIGN:${pubKeyHex.slice(0, 24).toUpperCase()}`;
 
-  return {
-    pubKey:     pubKeyHex,
-    privKeyB64,
-    algo:       _caps.ed25519 ? 'Ed25519' : 'HMAC-SHA256',
-    sovereignId,
-    derivedAt:  Date.now(),
-    context:    adminContext,
-    // Sovereign Override metadata
-    override: {
-      version:   'v2',
-      ruleZero:  true,
-      canOverride: [
-        'maxsupply', 'circulating', 'pool', 'agentfrs',
-        'scenario_prob', 'unlock_scenario', 'freeze_state',
-        'burn_rate', 'frs_reset_all', 'shadowban',
-        'mining_difficulty', 'epoch_advance', 'halt_mining',
-      ],
-    },
-  };
+      return {
+        pubKey:     pubKeyHex,
+        privKeyB64,
+        algo:       _caps.ed25519 ? 'Ed25519' : 'HMAC-SHA256',
+        sovereignId,
+        derivedAt:  Date.now(),
+        context:    adminContext,
+        // Sovereign Override metadata
+        override: {
+          version:   'v2',
+          ruleZero:  true,
+          canOverride: [
+            'maxsupply', 'circulating', 'pool', 'agentfrs',
+            'scenario_prob', 'unlock_scenario', 'freeze_state',
+            'burn_rate', 'frs_reset_all', 'shadowban',
+            'mining_difficulty', 'epoch_advance', 'halt_mining',
+          ],
+        },
+      };
+  } catch { return null; }
 }
 
 /**
@@ -475,15 +485,17 @@ export async function deriveSovereignKey(seedPhrase, adminContext = 'MIR-PLATFOR
  * @returns {Promise<string>} hex signature
  */
 export async function signSovereignCommand(privKeyB64, command, algo) {
-  // Canonical serialisation — deterministic JSON key ordering
-  const canonical = JSON.stringify({
-    field:     command.field,
-    value:     command.value,
-    timestamp: command.timestamp,
-    nonce:     command.nonce || crypto.getRandomValues(new Uint8Array(8)).join(''),
-    version:   'MIR-V2-SOVEREIGN',
-  });
-  return signMessage(privKeyB64, canonical, algo);
+  try {
+      // Canonical serialisation — deterministic JSON key ordering
+      const canonical = JSON.stringify({
+        field:     command.field,
+        value:     command.value,
+        timestamp: command.timestamp,
+        nonce:     command.nonce || crypto.getRandomValues(new Uint8Array(8)).join(''),
+        version:   'MIR-V2-SOVEREIGN',
+      });
+      return signMessage(privKeyB64, canonical, algo);
+  } catch { return ''; }
 }
 
 /**
@@ -497,24 +509,26 @@ export async function signSovereignCommand(privKeyB64, command, algo) {
  * @returns {Promise<boolean>}
  */
 export async function verifySovereignSignature(command, sigHex, adminPubKey, algo) {
-  if (!command || !sigHex || !adminPubKey) return false;
+  try {
+      if (!command || !sigHex || !adminPubKey) return false;
 
-  const canonical = JSON.stringify({
-    field:     command.field,
-    value:     command.value,
-    timestamp: command.timestamp,
-    nonce:     command.nonce,
-    version:   'MIR-V2-SOVEREIGN',
-  });
+      const canonical = JSON.stringify({
+        field:     command.field,
+        value:     command.value,
+        timestamp: command.timestamp,
+        nonce:     command.nonce,
+        version:   'MIR-V2-SOVEREIGN',
+      });
 
-  // Timing-safe: we always run the crypto even if early checks fail
-  const cryptoResult = await verifySignature(adminPubKey, canonical, sigHex, algo);
+      // Timing-safe: we always run the crypto even if early checks fail
+      const cryptoResult = await verifySignature(adminPubKey, canonical, sigHex, algo);
 
-  // Additional timestamp check: reject commands older than 5 minutes
-  const age = Date.now() - (command.timestamp || 0);
-  const freshEnough = age >= 0 && age < 5 * 60 * 1000;
+      // Additional timestamp check: reject commands older than 5 minutes
+      const age = Date.now() - (command.timestamp || 0);
+      const freshEnough = age >= 0 && age < 5 * 60 * 1000;
 
-  return cryptoResult && freshEnough;
+      return cryptoResult && freshEnough;
+  } catch { return false; }
 }
 
 /**
@@ -523,12 +537,14 @@ export async function verifySovereignSignature(command, sigHex, adminPubKey, alg
  * This is what the admin types in the terminal after confirming a challenge.
  */
 export async function verifySovereignSignatureSimple(privKeyB64, message, algo = 'HMAC-SHA256') {
-  // For HMAC: the "public key" and "private key" are the same bytes.
-  // Verification = re-sign and compare.
-  const expected = await signMessage(privKeyB64, message, algo);
-  // We always return true here — the caller checks the expected prefix.
-  // This is the challenge-response flow.
-  return expected;
+  try {
+      // For HMAC: the "public key" and "private key" are the same bytes.
+      // Verification = re-sign and compare.
+      const expected = await signMessage(privKeyB64, message, algo);
+      // We always return true here — the caller checks the expected prefix.
+      // This is the challenge-response flow.
+      return expected;
+  } catch { return false; }
 }
 
 // ── HKDF Child Key Derivation ──────────────────────────────────────────
@@ -543,36 +559,38 @@ export async function verifySovereignSignatureSimple(privKeyB64, message, algo =
  * @returns {Promise<{ pubKey, privKeyB64, algo, path }>}
  */
 export async function deriveChildKey(masterPrivB64, path, algo) {
-  await _probeCapabilities();
-  const sc     = window.crypto.subtle;
-  const master = b64ToBytes(masterPrivB64);
-  const info   = strToBytes(`MIR-CHILD-KEY:${path}`);
-  const salt   = strToBytes('MIR-V2-HKDF-SALT');
+  try {
+      await _probeCapabilities();
+      const sc     = window.crypto.subtle;
+      const master = b64ToBytes(masterPrivB64);
+      const info   = strToBytes(`MIR-CHILD-KEY:${path}`);
+      const salt   = strToBytes('MIR-V2-HKDF-SALT');
 
-  let childBytes;
-  if (_caps.hkdf) {
-    const ikm = await sc.importKey('raw', master, { name: 'HKDF' }, false, ['deriveBits']);
-    const expanded = await sc.deriveBits(
-      { name: 'HKDF', hash: 'SHA-256', salt, info },
-      ikm, 256
-    );
-    childBytes = new Uint8Array(expanded);
-  } else {
-    // SHA-256 fallback
-    const combined = new Uint8Array([...master, ...info, ...salt]);
-    childBytes     = await sha256Bytes(combined);
-  }
+      let childBytes;
+      if (_caps.hkdf) {
+        const ikm = await sc.importKey('raw', master, { name: 'HKDF' }, false, ['deriveBits']);
+        const expanded = await sc.deriveBits(
+          { name: 'HKDF', hash: 'SHA-256', salt, info },
+          ikm, 256
+        );
+        childBytes = new Uint8Array(expanded);
+      } else {
+        // SHA-256 fallback
+        const combined = new Uint8Array([...master, ...info, ...salt]);
+        childBytes     = await sha256Bytes(combined);
+      }
 
-  const pubKey    = await sha256Hex(childBytes);
-  const privKeyB64 = bytesToB64(childBytes);
+      const pubKey    = await sha256Hex(childBytes);
+      const privKeyB64 = bytesToB64(childBytes);
 
-  return {
-    pubKey,
-    privKeyB64,
-    algo:  algo || (_caps.ed25519 ? 'Ed25519' : 'HMAC-SHA256'),
-    path,
-    parentPubKey: await sha256Hex(master),
-  };
+      return {
+        pubKey,
+        privKeyB64,
+        algo:  algo || (_caps.ed25519 ? 'Ed25519' : 'HMAC-SHA256'),
+        path,
+        parentPubKey: await sha256Hex(master),
+      };
+  } catch { return null; }
 }
 
 // ── Password Hashing (PBKDF2) ──────────────────────────────────────────
@@ -586,32 +604,34 @@ export async function deriveChildKey(masterPrivB64, path, algo) {
  * @returns {Promise<{ hash: string, salt: string }>} — both hex
  */
 export async function hashPassword(password, saltHex) {
-  await _probeCapabilities();
-  const sc = window.crypto.subtle;
+  try {
+      await _probeCapabilities();
+      const sc = window.crypto.subtle;
 
-  // Generate or parse salt
-  const saltBytes = saltHex
-    ? hexToBytes(saltHex)
-    : crypto.getRandomValues(new Uint8Array(32));
-  const saltOut   = bytesToHex(saltBytes);
+      // Generate or parse salt
+      const saltBytes = saltHex
+        ? hexToBytes(saltHex)
+        : crypto.getRandomValues(new Uint8Array(32));
+      const saltOut   = bytesToHex(saltBytes);
 
-  const pwBytes   = strToBytes(password);
+      const pwBytes   = strToBytes(password);
 
-  if (_caps.pbkdf2) {
-    const baseKey = await sc.importKey('raw', pwBytes, { name: 'PBKDF2' }, false, ['deriveBits']);
-    const derived = await sc.deriveBits(
-      { name: 'PBKDF2', salt: saltBytes, iterations: 100_000, hash: 'SHA-256' },
-      baseKey, 256
-    );
-    return { hash: bufToHex(derived), salt: saltOut };
-  }
+      if (_caps.pbkdf2) {
+        const baseKey = await sc.importKey('raw', pwBytes, { name: 'PBKDF2' }, false, ['deriveBits']);
+        const derived = await sc.deriveBits(
+          { name: 'PBKDF2', salt: saltBytes, iterations: 100_000, hash: 'SHA-256' },
+          baseKey, 256
+        );
+        return { hash: bufToHex(derived), salt: saltOut };
+      }
 
-  // Fallback: 500x SHA-256 with salt interleaving
-  let current = new Uint8Array([...pwBytes, ...saltBytes]);
-  for (let i = 0; i < 500; i++) {
-    current = await sha256Bytes(current);
-  }
-  return { hash: bytesToHex(current), salt: saltOut };
+      // Fallback: 500x SHA-256 with salt interleaving
+      let current = new Uint8Array([...pwBytes, ...saltBytes]);
+      for (let i = 0; i < 500; i++) {
+        current = await sha256Bytes(current);
+      }
+      return { hash: bytesToHex(current), salt: saltOut };
+  } catch { return null; }
 }
 
 /**
@@ -619,11 +639,13 @@ export async function hashPassword(password, saltHex) {
  * Uses timing-safe comparison to prevent timing attacks.
  */
 export async function verifyPassword(password, saltHex, expectedHash) {
-  const { hash } = await hashPassword(password, saltHex);
-  // Timing-safe hex comparison
-  const hashBytes     = hexToBytes(hash);
-  const expectedBytes = hexToBytes(expectedHash);
-  return timingSafeEqual(hashBytes, expectedBytes);
+  try {
+      const { hash } = await hashPassword(password, saltHex);
+      // Timing-safe hex comparison
+      const hashBytes     = hexToBytes(hash);
+      const expectedBytes = hexToBytes(expectedHash);
+      return timingSafeEqual(hashBytes, expectedBytes);
+  } catch { return false; }
 }
 
 // ── Session Token Generation ──────────────────────────────────────────
@@ -640,25 +662,27 @@ export async function verifyPassword(password, saltHex, expectedHash) {
  *   platform    : 'MIR-V2'
  */
 export async function generateSessionToken(privKeyB64, pubKey, algo) {
-  const nonce     = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
-  const issuedAt  = Date.now();
-  const expiresAt = issuedAt + 86_400_000; // 24 hours
+  try {
+      const nonce     = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
+      const issuedAt  = Date.now();
+      const expiresAt = issuedAt + 86_400_000; // 24 hours
 
-  const header  = { alg: algo, typ: 'MIR-SESSION-V2' };
-  const payload = {
-    pubKey,
-    issuedAt,
-    expiresAt,
-    nonce,
-    platform: 'MIR-V2',
-  };
+      const header  = { alg: algo, typ: 'MIR-SESSION-V2' };
+      const payload = {
+        pubKey,
+        issuedAt,
+        expiresAt,
+        nonce,
+        platform: 'MIR-V2',
+      };
 
-  const headerB64  = btoa(JSON.stringify(header));
-  const payloadB64 = btoa(JSON.stringify(payload));
-  const sigInput   = `${headerB64}.${payloadB64}`;
-  const signature  = await signMessage(privKeyB64, sigInput, algo);
+      const headerB64  = btoa(JSON.stringify(header));
+      const payloadB64 = btoa(JSON.stringify(payload));
+      const sigInput   = `${headerB64}.${payloadB64}`;
+      const signature  = await signMessage(privKeyB64, sigInput, algo);
 
-  return `${headerB64}.${payloadB64}.${signature}`;
+      return `${headerB64}.${payloadB64}.${signature}`;
+  } catch { return null; }
 }
 
 /**
@@ -733,12 +757,14 @@ export function randomB64(n = 32) {
  * @returns {{ prefix: string, fullNonce: string, issuedAt: number }}
  */
 export function generateTerminalChallenge(length = 6) {
-  const fullNonce = randomHex(16);
-  return {
-    prefix:   fullNonce.slice(0, length).toUpperCase(),
-    fullNonce,
-    issuedAt: Date.now(),
-  };
+  try {
+      const fullNonce = randomHex(16);
+      return {
+        prefix:   fullNonce.slice(0, length).toUpperCase(),
+        fullNonce,
+        issuedAt: Date.now(),
+      };
+  } catch { return null; }
 }
 
 /**
@@ -747,11 +773,13 @@ export function generateTerminalChallenge(length = 6) {
  * the challenge was issued within the last 60 seconds.
  */
 export function verifyTerminalChallenge(challenge, providedPrefix) {
-  if (!challenge || !providedPrefix) return false;
-  const age       = Date.now() - challenge.issuedAt;
-  const notExpired = age >= 0 && age < 60_000; // 60 second window
-  const prefixOk   = challenge.prefix.toUpperCase() === providedPrefix.toUpperCase().trim();
-  return notExpired && prefixOk;
+  try {
+      if (!challenge || !providedPrefix) return false;
+      const age       = Date.now() - challenge.issuedAt;
+      const notExpired = age >= 0 && age < 60_000; // 60 second window
+      const prefixOk   = challenge.prefix.toUpperCase() === providedPrefix.toUpperCase().trim();
+      return notExpired && prefixOk;
+  } catch { return false; }
 }
 
 // ── AES-GCM Encryption (for IndexedDB at-rest encryption) ─────────────
@@ -762,48 +790,52 @@ export function verifyTerminalChallenge(challenge, providedPrefix) {
  * Used for encrypting sensitive IndexedDB fields (private keys, admin keys).
  */
 export async function aesEncrypt(plaintext, keyB64) {
-  await _probeCapabilities();
-  if (!_caps.aesGcm) {
-    // Graceful degradation: base64 only (no encryption)
-    return { cipherB64: btoa(plaintext), ivB64: '', degraded: true };
-  }
+  try {
+      await _probeCapabilities();
+      if (!_caps.aesGcm) {
+        // Graceful degradation: base64 only (no encryption)
+        return { cipherB64: btoa(plaintext), ivB64: '', degraded: true };
+      }
 
-  const sc       = window.crypto.subtle;
-  const keyBytes = b64ToBytes(keyB64);
-  const iv       = crypto.getRandomValues(new Uint8Array(12));
-  const msgBytes = strToBytes(plaintext);
+      const sc       = window.crypto.subtle;
+      const keyBytes = b64ToBytes(keyB64);
+      const iv       = crypto.getRandomValues(new Uint8Array(12));
+      const msgBytes = strToBytes(plaintext);
 
-  const key = await sc.importKey(
-    'raw', keyBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
-  );
-  const cipher = await sc.encrypt({ name: 'AES-GCM', iv }, key, msgBytes);
+      const key = await sc.importKey(
+        'raw', keyBytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+      );
+      const cipher = await sc.encrypt({ name: 'AES-GCM', iv }, key, msgBytes);
 
-  return {
-    cipherB64: bytesToB64(new Uint8Array(cipher)),
-    ivB64:     bytesToB64(iv),
-    degraded:  false,
-  };
+      return {
+        cipherB64: bytesToB64(new Uint8Array(cipher)),
+        ivB64:     bytesToB64(iv),
+        degraded:  false,
+      };
+  } catch { return null; }
 }
 
 /**
  * Decrypt an AES-256-GCM encrypted payload.
  */
 export async function aesDecrypt(cipherB64, ivB64, keyB64) {
-  await _probeCapabilities();
-  if (!_caps.aesGcm) {
-    return atob(cipherB64); // degraded passthrough
-  }
+  try {
+      await _probeCapabilities();
+      if (!_caps.aesGcm) {
+        return atob(cipherB64); // degraded passthrough
+      }
 
-  const sc         = window.crypto.subtle;
-  const keyBytes   = b64ToBytes(keyB64);
-  const iv         = b64ToBytes(ivB64);
-  const cipherBytes= b64ToBytes(cipherB64);
+      const sc         = window.crypto.subtle;
+      const keyBytes   = b64ToBytes(keyB64);
+      const iv         = b64ToBytes(ivB64);
+      const cipherBytes= b64ToBytes(cipherB64);
 
-  const key = await sc.importKey(
-    'raw', keyBytes, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
-  );
-  const plain = await sc.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
-  return new TextDecoder().decode(plain);
+      const key = await sc.importKey(
+        'raw', keyBytes, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+      );
+      const plain = await sc.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
+      return new TextDecoder().decode(plain);
+  } catch { return null; }
 }
 
 // ── Module Initialisation ──────────────────────────────────────────────
