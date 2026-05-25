@@ -1113,6 +1113,510 @@ select.ifield   { cursor: pointer; }
   #topbar { padding: 0 0.6rem; }
   #main { padding: 0.8rem; }
 }
+
+/* ── Welcome Onboarding Overlay ─────────────────────────────────────────── */
+#welcome-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3,7,18,0.96);
+  backdrop-filter: blur(8px);
+}
+#welcome-overlay.open { display: flex; }
+.welcome-panel {
+  width: min(560px, 94vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--void,#050c1a);
+  border: 1px solid var(--cyan,#00d4ff);
+  border-radius: 4px;
+  padding: 2rem 1.8rem 1.5rem;
+  box-shadow: 0 0 60px rgba(0,212,255,0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.welcome-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.82rem;
+  color: var(--cyan,#00d4ff);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-deep,#0f1829);
+  padding-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.welcome-title::before { content:'⬡'; color:var(--green,#00ff88); }
+.welcome-step {
+  display: none;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.welcome-step.active { display: flex; }
+.welcome-step-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.7rem;
+  color: var(--green,#00ff88);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.welcome-text {
+  font-family: var(--font-data,'Rajdhani',monospace);
+  font-size: 0.78rem;
+  color: var(--txt-sec,#8ba3cc);
+  line-height: 1.65;
+}
+.welcome-card {
+  background: rgba(0,212,255,0.04);
+  border: 1px solid var(--border,#1a2535);
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+}
+.welcome-card-title {
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+.welcome-card.pub .welcome-card-title  { color: var(--green,#00ff88); }
+.welcome-card.priv .welcome-card-title { color: var(--crimson,#ff2244); }
+.welcome-warning {
+  background: rgba(255,34,68,0.07);
+  border: 1px solid var(--crimson,#ff2244);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-data,'Rajdhani',monospace);
+  font-size: 0.72rem;
+  color: var(--crimson,#ff2244);
+  line-height: 1.55;
+}
+.welcome-warning::before { content:'⚠ SECURITY: '; font-weight: 800; }
+.welcome-steps-indicator {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.welcome-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border,#1a2535);
+  transition: background 0.2s;
+}
+.welcome-dot.active { background: var(--cyan,#00d4ff); }
+.welcome-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-deep,#0f1829);
+}
+.welcome-btn {
+  background: rgba(0,212,255,0.1);
+  border: 1px solid var(--cyan,#00d4ff);
+  color: var(--cyan,#00d4ff);
+  font-family: var(--font-hud,'Orbitron',monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.welcome-btn:hover { background: rgba(0,212,255,0.2); }
+.welcome-btn.skip {
+  background: transparent;
+  border-color: var(--border,#1a2535);
+  color: var(--txt-dim,#4a6080);
+}
+.welcome-btn.skip:hover { border-color: var(--txt-dim,#4a6080); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HELP HUD — Button + Modal + Fixed FAB
+   Extends existing .nbtn and modal-overlay patterns.
+   Military terminal aesthetic — neon green on dark void.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Floating Action Button (FAB) — fixed bottom-right, always on top */
+#mir-help-fab {
+  position:   fixed;
+  bottom:     22px;
+  right:      22px;
+  z-index:    99999;
+  width:      44px;
+  height:     44px;
+  border-radius: 50%;
+  background: #000;
+  border:     1.5px solid #00ff00;
+  color:      #00ff00;
+  font-family:'Orbitron', var(--font-hud), monospace;
+  font-size:  1.05rem;
+  font-weight:900;
+  letter-spacing: 0;
+  cursor:     pointer;
+  display:    flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 0 12px rgba(0,255,0,0.35), inset 0 0 8px rgba(0,255,0,0.06);
+  transition: box-shadow 0.2s, transform 0.15s;
+  /* hide until app is ready */
+  opacity:    0;
+  pointer-events: none;
+  transform:  scale(0.6);
+}
+#mir-help-fab.ready {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.2s;
+}
+#mir-help-fab:hover {
+  box-shadow: 0 0 20px rgba(0,255,0,0.6), inset 0 0 14px rgba(0,255,0,0.12);
+  transform:  scale(1.08);
+}
+#mir-help-fab:active { transform: scale(0.96); }
+
+/* Navbar ? button — injected into #nav-right */
+#hud-help-btn {
+  font-family: var(--font-hud);
+  font-size:   0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+#hud-help-btn:hover {
+  background:   rgba(0,255,0,0.07) !important;
+  border-color: #00ff00 !important;
+  color:        #00ff00 !important;
+  box-shadow:   0 0 10px rgba(0,255,0,0.2);
+}
+
+/* Help Modal Overlay */
+#mir-help-modal {
+  display:       none;
+  position:      fixed;
+  inset:         0;
+  z-index:       99998;
+  align-items:   center;
+  justify-content: center;
+  background:    rgba(0,0,0,0.90);
+  backdrop-filter: blur(7px);
+}
+#mir-help-modal.open { display: flex; }
+
+/* Modal panel */
+.mir-help-panel {
+  width:      min(700px, 96vw);
+  max-height: 88vh;
+  background: #000;
+  border:     1px solid #00ff00;
+  border-radius: 4px;
+  display:    flex;
+  flex-direction: column;
+  box-shadow: 0 0 50px rgba(0,255,0,0.15),
+              inset 0 0 80px rgba(0,255,0,0.03);
+  overflow:   hidden;
+  /* scanline overlay on panel */
+  background-image:
+    repeating-linear-gradient(
+      0deg, transparent 0px, transparent 3px,
+      rgba(0,255,0,0.018) 3px, rgba(0,255,0,0.018) 4px
+    );
+}
+
+/* Header bar */
+.mir-help-header {
+  display:    flex;
+  align-items: center;
+  justify-content: space-between;
+  padding:    0.65rem 1rem;
+  border-bottom: 1px solid #111;
+  background: rgba(0,255,0,0.04);
+  flex-shrink: 0;
+}
+.mir-help-title {
+  font-family: var(--font-hud), 'Orbitron', monospace;
+  font-size:  0.68rem;
+  font-weight:700;
+  color:      #00ff00;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow:0 0 8px rgba(0,255,0,0.5);
+  display:    flex;
+  align-items:center;
+  gap:        0.45rem;
+}
+.mir-help-title::before {
+  content:'◈';
+  font-size: 0.85rem;
+}
+.mir-help-close {
+  background:  transparent;
+  border:      1px solid #222;
+  color:       #444;
+  font-size:   0.9rem;
+  width:       26px; height: 26px;
+  border-radius: 3px;
+  cursor:      pointer;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  transition:  all 0.15s;
+  line-height: 1;
+}
+.mir-help-close:hover { border-color:#00ff00; color:#00ff00; }
+
+/* Tab bar — categories */
+.mir-help-tabs {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        0.25rem;
+  padding:    0.45rem 0.9rem;
+  border-bottom: 1px solid #111;
+  background: #000;
+  flex-shrink:0;
+}
+.mir-help-tab {
+  background:  transparent;
+  border:      1px solid #1a1a1a;
+  color:       #333;
+  font-family: var(--font-data), 'Share Tech Mono', monospace;
+  font-size:   0.58rem;
+  padding:     0.18rem 0.45rem;
+  border-radius: 2px;
+  cursor:      pointer;
+  transition:  all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.mir-help-tab:hover  { border-color:#00cc00; color:#00cc00; }
+.mir-help-tab.active {
+  border-color: #00ff00;
+  color:        #00ff00;
+  background:   rgba(0,255,0,0.06);
+  box-shadow:   0 0 6px rgba(0,255,0,0.15);
+}
+
+/* Lang selector */
+.mir-help-langs {
+  display:    flex;
+  gap:        0.25rem;
+  padding:    0.38rem 0.9rem;
+  border-bottom: 1px solid #0a0a0a;
+  background: #000;
+  flex-shrink:0;
+}
+.mir-help-lang {
+  background:  transparent;
+  border:      1px solid #1a1a1a;
+  color:       #2a2a2a;
+  font-family: var(--font-data), monospace;
+  font-size:   0.58rem;
+  font-weight: 700;
+  padding:     0.15rem 0.38rem;
+  border-radius: 2px;
+  cursor:      pointer;
+  transition:  all 0.13s;
+  letter-spacing: 0.04em;
+}
+.mir-help-lang:hover  { border-color:#00cc00; color:#00cc00; }
+.mir-help-lang.active {
+  border-color:#00ff00; color:#00ff00;
+  background: rgba(0,255,0,0.05);
+}
+
+/* Content area */
+.mir-help-body {
+  flex:       1;
+  overflow-y: auto;
+  padding:    0.9rem 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: #1a1a1a #000;
+}
+.mir-help-body::-webkit-scrollbar { width: 3px; }
+.mir-help-body::-webkit-scrollbar-track { background: #000; }
+.mir-help-body::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
+
+/* Security warning banner */
+.mir-help-sec-warn {
+  border:      1px solid #cc0000;
+  background:  rgba(200,0,0,0.06);
+  border-radius: 3px;
+  padding:     0.6rem 0.8rem;
+  margin-bottom: 0.8rem;
+  font-family: var(--font-data), monospace;
+  font-size:   0.67rem;
+  color:       #ff3333;
+  line-height: 1.55;
+  display:     none;
+}
+.mir-help-sec-warn.visible { display: block; }
+.mir-help-sec-warn strong { color: #ff0000; font-weight: 800; }
+
+/* Category section title */
+.mir-help-section-title {
+  font-family: var(--font-hud), monospace;
+  font-size:   0.62rem;
+  color:       #00ff00;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #111;
+}
+.mir-help-summary {
+  font-family: var(--font-data), monospace;
+  font-size:   0.68rem;
+  color:       #444;
+  margin-bottom: 0.7rem;
+  line-height: 1.5;
+}
+
+/* Q&A items */
+.mir-help-item {
+  margin-bottom: 0.7rem;
+  padding:     0.5rem 0.7rem;
+  border-left: 2px solid #111;
+  transition:  border-color 0.15s;
+}
+.mir-help-item:hover { border-left-color: #00ff00; }
+.mir-help-q {
+  font-family: var(--font-data), monospace;
+  font-size:   0.67rem;
+  color:       #00cc00;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+.mir-help-q::before { content: '▸ '; opacity: 0.7; }
+.mir-help-a {
+  font-family: var(--font-data), monospace;
+  font-size:   0.66rem;
+  color:       #556677;
+  line-height: 1.6;
+  padding-left: 0.8rem;
+}
+
+/* Key→Desc items (dashboard keys category) */
+.mir-help-kd {
+  display:    flex;
+  gap:        0.6rem;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+  padding:    0.35rem 0.5rem;
+  border-left: 2px solid #0d0d0d;
+}
+.mir-help-kd:hover { border-left-color: #00cc00; }
+.mir-help-key {
+  font-family: var(--font-hud), monospace;
+  font-size:   0.58rem;
+  color:       #00ff00;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width:   90px;
+  text-shadow: 0 0 6px rgba(0,255,0,0.3);
+}
+.mir-help-kdesc {
+  font-family: var(--font-data), monospace;
+  font-size:   0.65rem;
+  color:       #445566;
+  line-height: 1.5;
+}
+
+/* Input row */
+.mir-help-input-row {
+  display:    flex;
+  gap:        0.5rem;
+  padding:    0.65rem 1rem;
+  border-top: 1px solid #0d0d0d;
+  background: rgba(0,0,0,0.6);
+  flex-shrink:0;
+}
+.mir-help-input {
+  flex:       1;
+  background: #060606;
+  border:     1px solid #1a1a1a;
+  border-radius: 2px;
+  color:      #00ff00;
+  font-family: var(--font-data), monospace;
+  font-size:  0.7rem;
+  padding:    0.42rem 0.65rem;
+  outline:    none;
+  transition: border-color 0.15s;
+  caret-color:#00ff00;
+}
+.mir-help-input:focus { border-color: #00ff00; }
+.mir-help-input::placeholder { color: #222; }
+.mir-help-ask-btn {
+  background:  rgba(0,255,0,0.08);
+  border:      1px solid #00ff00;
+  color:       #00ff00;
+  font-family: var(--font-hud), monospace;
+  font-size:   0.58rem;
+  font-weight: 700;
+  padding:     0.42rem 0.8rem;
+  border-radius: 2px;
+  cursor:      pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:  all 0.15s;
+  white-space: nowrap;
+}
+.mir-help-ask-btn:hover:not(:disabled) {
+  background: rgba(0,255,0,0.16);
+  box-shadow: 0 0 10px rgba(0,255,0,0.2);
+}
+.mir-help-ask-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* AI response bubble */
+.mir-help-ai-msg {
+  padding:    0.55rem 0.75rem;
+  background: rgba(0,255,0,0.04);
+  border:     1px solid #0d180d;
+  border-radius: 2px;
+  margin-bottom: 0.6rem;
+}
+.mir-help-ai-q {
+  font-family: var(--font-data), monospace;
+  font-size:   0.65rem;
+  color:       #00aa00;
+  margin-bottom: 0.3rem;
+}
+.mir-help-ai-a {
+  font-family: var(--font-data), monospace;
+  font-size:   0.67rem;
+  color:       #667788;
+  line-height: 1.6;
+}
+.mir-help-ai-src {
+  font-size:   0.56rem;
+  color:       #222;
+  margin-top:  0.25rem;
+  font-style:  italic;
+}
+.mir-help-thinking {
+  font-family: var(--font-data), monospace;
+  font-size:   0.62rem;
+  color:       #1a2a1a;
+  padding:     0.35rem 0;
+  letter-spacing: 0.05em;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  #mir-help-fab { bottom: 16px; right: 16px; width: 40px; height: 40px; font-size: 0.95rem; }
+  .mir-help-panel { max-height: 95vh; }
+  .mir-help-tabs  { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -1984,20 +2488,61 @@ async function bootstrapApplication() {
   // Resolve module paths relative to index.html location.
   // import.meta.url gives the absolute URL of THIS script (index.html inline module),
   // which correctly handles subpath hosting like /mir-Platform/.
-  const _base = new URL('.', import.meta.url).href;
-  const _resolve = (file) => _base + file;
+  // ── Path resolver — 4-strategy fallback for GitHub Pages subpath hosting ──
+  // Strategy 1: import.meta.url (standard ES module — most reliable)
+  // Strategy 2: location.href stripped to directory
+  // Strategy 3: document.baseURI
+  // Strategy 4: location.origin + pathname directory
+  function _getBase() {
+    try {
+      // ES module import.meta.url is the gold standard
+      const u = new URL('.', import.meta.url);
+      // Ensure it ends with /
+      return u.href.endsWith('/') ? u.href : u.href + '/';
+    } catch {}
+    try {
+      // location.href fallback — strip filename if present
+      const loc = window.location.href;
+      return loc.endsWith('/') ? loc : loc.slice(0, loc.lastIndexOf('/') + 1);
+    } catch {}
+    try {
+      return document.baseURI;
+    } catch {}
+    return window.location.origin + '/';
+  }
+
+  const _base = _getBase();
+  console.log('[BOOT] Module base URL:', _base);
+
+  // Build full URL and verify it looks sane before importing
+  const _resolve = (file) => {
+    try {
+      return new URL(file, _base).href;
+    } catch {
+      return _base + file;
+    }
+  };
 
   const _load = async (label, file, progress) => {
     bootSetStatus(`Loading ${label}...`);
     bootSetProgress(progress);
+    const url = _resolve(file);
+    console.log(`[BOOT] Attempting: ${url}`);
     try {
-      const mod = await import(/* @vite-ignore */ _resolve(file));
-      console.log(`[BOOT] ${label} loaded`);
+      const mod = await import(url);
+      console.log(`[BOOT] ✓ ${label} loaded from ${url}`);
       return mod;
     } catch (err) {
-      console.error(`[BOOT] ${label} failed:`, err.message);
-      bootSetStatus(`⚠ ${label} failed — continuing...`);
-      return null;
+      // Try bare relative path as last resort
+      try {
+        const mod2 = await import('./' + file);
+        console.log(`[BOOT] ✓ ${label} loaded via relative path`);
+        return mod2;
+      } catch (err2) {
+        console.error(`[BOOT] ✗ ${label} failed:`, err.message, '| relative fallback:', err2.message);
+        bootSetStatus(`⚠ ${label} failed — continuing...`);
+        return null;
+      }
     }
   };
 
@@ -2051,6 +2596,38 @@ async function bootstrapApplication() {
   await new Promise(r => setTimeout(r, 400));
   const overlay = document.getElementById('boot-overlay');
   if (overlay) overlay.classList.add('hidden');
+
+  // ── Inject Help HUD after boot overlay clears ─────────────────────────
+  // Wire support_agent.js and activate the ? button + FAB
+  try {
+    const supportURL = _resolve('support_agent.js');
+    const SupportMod = await import(supportURL);
+    window._mirSupport = {
+      askSupport:    SupportMod.askSupport,
+      preloadHelp:   SupportMod.preloadHelp,
+      getCategories: SupportMod.getSupportCategories,
+    };
+    console.log('[BOOT] Support agent ready');
+  } catch (e) {
+    console.warn('[BOOT] Support agent not loaded:', e.message);
+  }
+
+  if (typeof window.injectHelpHUD === 'function') {
+    window.injectHelpHUD();
+    console.log('[BOOT] Help HUD injected');
+  }
+
+  // ── Welcome Overlay — lazy-loaded, shown only on first visit ──────────
+  try {
+    const woURL = _resolve('welcome_overlay.js');
+    const WOMod = await import(woURL);
+    if (typeof WOMod.initWelcomeOverlay === 'function') {
+      WOMod.initWelcomeOverlay();
+      console.log('[BOOT] Welcome overlay ready');
+    }
+  } catch (e) {
+    console.warn('[BOOT] welcome_overlay.js not loaded:', e.message);
+  }
 }
 
 // ── Kick off boot sequence on DOMContentLoaded ─────────────────────────
@@ -2377,7 +2954,767 @@ document.addEventListener('keydown', (e) => {
 
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIEW RENDERERS
+// Called by ai_evolution.js via window.renderFeed(), window.renderScenarios()
+// etc. Also triggered by the mir:viewchange event from setView().
+// All helpers (_escH, _fmt2) duplicated here to keep this block self-contained.
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initViewRenderers() {
+  'use strict';
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const _esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const _fmt2 = v => (v / 100_000_000).toFixed(2);
+  const _fmt8 = v => (v / 100_000_000).toFixed(8);
+  const _el   = id => document.getElementById(id);
+  const _setText = (id, val) => { const e = _el(id); if (e) e.textContent = val; };
+  const _setHTML = (id, val) => { const e = _el(id); if (e) e.innerHTML = val; };
+  const _timeAgo = ts => {
+    if (!ts) return '';
+    const d = Math.floor((Date.now() - ts) / 60000);
+    if (d < 1) return 'just now';
+    if (d < 60) return d + 'm ago';
+    if (d < 1440) return Math.floor(d/60) + 'h ago';
+    return Math.floor(d/1440) + 'd ago';
+  };
+  const _riskBadge = prob =>
+    prob >= 70 ? `<span class="tbadge tbadge-r">${prob}%</span>`
+  : prob >= 40 ? `<span class="tbadge tbadge-y">${prob}%</span>`
+  :              `<span class="tbadge tbadge-g">${prob}%</span>`;
+
+  // ── Feed Renderer ─────────────────────────────────────────────────────────
+  window.renderFeed = function renderFeed() {
+    const container = _el('feed-container');
+    if (!container) return;
+    const data = window.getFeedData ? window.getFeedData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-feed', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No intelligence items yet. Be the first to submit.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice().reverse().slice(0, 80).forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      const upvotes  = item.upvotes || 0;
+      const prob     = item.credibility || item.prob || 0;
+      const tagHtml  = (item.tags || []).map(t =>
+        `<span class="tbadge" style="background:rgba(0,212,255,0.06);color:var(--txt-dim);margin-right:0.25rem">${_esc(t)}</span>`
+      ).join('');
+      card.innerHTML = [
+        '<div class="card-hd">',
+          '<div>',
+            `<div class="card-title">${_esc(item.headline || item.title || '')}</div>`,
+            `<div class="card-sub" style="margin-top:0.2rem">${_esc(item.body || item.analysis || '')}</div>`,
+          '</div>',
+          `<span class="tbadge tbadge-g" style="white-space:nowrap">▲ ${upvotes}</span>`,
+        '</div>',
+        tagHtml ? `<div style="margin-top:0.35rem">${tagHtml}</div>` : '',
+        `<div style="display:flex;gap:0.75rem;margin-top:0.4rem;font-size:0.6rem;color:var(--txt-dim)">`,
+          `<span>${_esc(item.author || item.authorId || 'anonymous')}</span>`,
+          `<span>${_timeAgo(item.ts || item.timestamp)}</span>`,
+          item.frs ? `<span>FRS ${item.frs}</span>` : '',
+          `<button onclick="window.upvoteIntel&&window.upvoteIntel('${_esc(item.id||'')}',this)" `,
+            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.35rem;font-size:0.6rem;color:var(--txt-dim);cursor:pointer">▲ Upvote</button>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── Scenario Renderer ─────────────────────────────────────────────────────
+  window.renderScenarios = function renderScenarios() {
+    const container = _el('scenarios-container');
+    if (!container) return;
+    const data = window.getScenariosData ? window.getScenariosData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-scenarios', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No scenarios yet. Create the first one.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice(0, 60).forEach(s => {
+      const prob = s.adminOverride ? (s.adminOverrideValue ?? s.consensusProb) : (s.consensusProb || s.probability || 50);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      card.dataset.scenarioId = s.id || '';
+      card.innerHTML = [
+        '<div class="card-hd">',
+          '<div>',
+            `<div class="card-title">${_esc(s.title || '')}`,
+              s.adminOverride ? ' <span class="tbadge tbadge-gd">OVERRIDE</span>' : '',
+            '</div>',
+            `<div class="card-sub">${_esc(s.desc || s.description || '')}</div>`,
+          '</div>',
+          _riskBadge(prob),
+        '</div>',
+        `<div class="pbar mb1"><div class="pbar-fill g" id="scen-bar-${(s.id||'').slice(0,8)}" style="width:${prob}%"></div></div>`,
+        `<div style="display:flex;gap:0.5rem;font-size:0.62rem;color:var(--txt-dim);margin-bottom:0.4rem">`,
+          `<span style="color:var(--amber)">Macro: ${((s.aiWeights?.macro||0.33)*100).toFixed(0)}%</span>`,
+          `<span style="color:var(--crimson)">Cyber: ${((s.aiWeights?.cyber||0.33)*100).toFixed(0)}%</span>`,
+          `<span style="color:var(--green)">Geo: ${((s.aiWeights?.geo||0.34)*100).toFixed(0)}%</span>`,
+        '</div>',
+        s.adminOverride
+          ? `<div style="font-size:0.62rem;color:var(--amber)">Locked by sovereign override.</div>`
+          : `<input type="range" min="1" max="99" value="${prob}" `,
+            `oninput="window._mirScenProb&&window._mirScenProb('${s.id||''}',this.value)" `,
+            `style="width:100%;accent-color:var(--green);margin-bottom:0.4rem">`,
+        `<div style="display:flex;align-items:center;gap:0.75rem;font-size:0.62rem;color:var(--txt-dim)">`,
+          `<span>Horizon: ${s.horizon||0}d</span>`,
+          `<span>by ${_esc(s.author||'')}</span>`,
+          `<button onclick="window.upvoteScenario&&window.upvoteScenario('${s.id||''}')" `,
+            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.38rem;font-size:0.62rem;color:var(--txt-dim);cursor:pointer">▲ ${s.upvotes||0}</button>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── Prediction Markets Renderer ───────────────────────────────────────────
+  window.renderPredictions = function renderPredictions() {
+    const container = _el('predictions-container');
+    if (!container) return;
+    const data = window.getPredictionsData ? window.getPredictionsData() : [];
+    const items = Array.isArray(data) ? data : [];
+    _setText('nb-predictions', String(items.length));
+    if (!items.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No prediction markets open.</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    items.slice(0, 40).forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '0.7rem';
+      const probA = p.probA || 50;
+      const probB = 100 - probA;
+      card.innerHTML = [
+        `<div class="card-title">${_esc(p.question || p.title || '')}</div>`,
+        `<div class="card-sub" style="margin-bottom:0.5rem">Resolves: ${p.resolutionDate ? new Date(p.resolutionDate).toLocaleDateString() : '—'}</div>`,
+        '<div class="pbar" style="height:12px;margin-bottom:0.4rem">',
+          `<div style="width:${probA}%;height:100%;background:var(--green);border-radius:3px 0 0 3px;display:inline-block;transition:width 0.3s"></div>`,
+          `<div style="width:${probB}%;height:100%;background:var(--crimson);display:inline-block;transition:width 0.3s"></div>`,
+        '</div>',
+        `<div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--txt-dim)">`,
+          `<span style="color:var(--green)">${_esc(p.optionA||'YES')} ${probA}%</span>`,
+          `<span style="color:var(--crimson)">${_esc(p.optionB||'NO')} ${probB}%</span>`,
+        '</div>',
+      ].join('');
+      frag.appendChild(card);
+    });
+    container.replaceChildren(frag);
+  };
+
+  // ── OTC Market Renderer ───────────────────────────────────────────────────
+  window.renderMarket = function renderMarket() {
+    const data    = window.getOTCData ? window.getOTCData() : [];
+    const orders  = Array.isArray(data) ? data : (data.orders || []);
+    const sellEl  = _el('otc-sell-orders');
+    const buyEl   = _el('otc-buy-orders');
+    const sells   = orders.filter(o => o.type === 'sell' && o.status === 'open');
+    const buys    = orders.filter(o => o.type === 'buy'  && o.status === 'open');
+    const buildList = (list, isSell) => {
+      if (!list.length) return '<div class="tdim txs" style="padding:1rem;text-align:center">No open ' + (isSell ? 'sell' : 'buy') + ' orders.</div>';
+      return list.slice(0,20).map(o => [
+        '<div class="card" style="margin-bottom:0.5rem">',
+          '<div class="card-hd">',
+            `<div><div class="card-title">${_fmt2(o.amountMIRI||o.amount||0)} MIR</div>`,
+            `<div class="card-sub">${o.pricePerMIR||'—'} USDT/MIR · ${_esc(o.seller||o.sellerUsername||o.pubKey?.slice(0,8)||'—')}</div></div>`,
+            isSell
+              ? `<button onclick="window.createBuyOrder&&window.createBuyOrder('${o.id||''}')" class="nbtn" style="font-size:0.6rem">BUY</button>`
+              : `<button onclick="window.createSellOrder&&window.createSellOrder('${o.id||''}')" class="nbtn" style="font-size:0.6rem">SELL</button>`,
+          '</div></div>',
+      ].join('')).join('');
+    };
+    if (sellEl) sellEl.innerHTML = buildList(sells, true);
+    if (buyEl)  buyEl.innerHTML  = buildList(buys, false);
+  };
+
+  // ── Ledger Renderer ───────────────────────────────────────────────────────
+  window.renderLedger = function renderLedger() {
+    const container = _el('ledger-container');
+    if (!container) return;
+    const data = window.getTxData ? window.getTxData() : [];
+    const txs  = Array.isArray(data) ? data : [];
+    if (!txs.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No transactions yet.</div>';
+      return;
+    }
+    const rows = txs.slice().reverse().slice(0,100).map(tx => [
+      '<div class="card" style="margin-bottom:0.45rem">',
+        '<div class="card-hd" style="gap:0.5rem">',
+          `<div style="font-size:0.62rem;color:var(--txt-dim)">${_esc(tx.type||'tx')}</div>`,
+          `<div style="font-size:0.68rem;color:${(tx.amount||0)>0?'var(--green)':'var(--crimson)'}">`,
+            `${(tx.amount||0)>0?'+':''}${_fmt8(tx.amount||0)} MIR`,
+          '</div>',
+          `<div style="font-size:0.6rem;color:var(--txt-dim)">${_timeAgo(tx.timestamp||tx.ts)}</div>`,
+        '</div>',
+        tx.memo ? `<div class="card-sub">${_esc(tx.memo)}</div>` : '',
+      '</div>',
+    ].join('')).join('');
+    container.innerHTML = rows;
+  };
+
+  // ── Leaderboard Renderer ──────────────────────────────────────────────────
+  window.renderLeaderboard = function renderLeaderboard() {
+    const container = _el('leaderboard-container');
+    if (!container) return;
+    const db = window._MIR_DB;
+    if (!db) { container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">Loading...</div>'; return; }
+    const wallets  = Object.entries(db.wallets || {});
+    const accounts = Object.entries(db.accounts || {});
+    const entries  = (wallets.length ? wallets : accounts)
+      .map(([pk, w]) => ({ pk, username: w.username || pk.slice(0,8), frs: w.frs || 0, balance: w.balance || 0 }))
+      .sort((a,b) => b.frs - a.frs)
+      .slice(0, 50);
+    if (!entries.length) {
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No ranked users yet.</div>';
+      return;
+    }
+    const rows = entries.map((e, i) => [
+      '<div class="card" style="margin-bottom:0.45rem">',
+        '<div class="card-hd">',
+          `<div style="display:flex;align-items:center;gap:0.6rem">`,
+            `<span style="font-family:var(--font-hud);font-size:0.6rem;color:var(--txt-dim);min-width:1.5rem">#${i+1}</span>`,
+            `<div><div class="card-title">${_esc(e.username)}</div>`,
+            `<div class="card-sub">${e.pk.slice(0,16)}...</div></div>`,
+          '</div>',
+          `<div style="text-align:right"><div style="color:var(--cyan);font-size:0.68rem">FRS ${e.frs}</div>`,
+            `<div class="card-sub">${_fmt2(e.balance)} MIR</div></div>`,
+        '</div>',
+      '</div>',
+    ].join('')).join('');
+    container.innerHTML = rows;
+  };
+
+  // ── Tokenomics Renderer ───────────────────────────────────────────────────
+  window.renderTokenomics = function renderTokenomics() {
+    const container = _el('tokenomics-container');
+    if (!container) return;
+    const t = window.getTokenomicsData ? window.getTokenomicsData() : {};
+    const maxS = 2_100_000_00000000;
+    const circ = t.circulatingSupply || 0;
+    const burn = t.burned            || 0;
+    const pool = t.networkPool       || 0;
+    const pct  = v => ((v/maxS)*100).toFixed(4);
+    container.innerHTML = [
+      '<div class="card" style="margin-bottom:0.7rem">',
+        '<div class="card-title" style="margin-bottom:0.7rem">Supply Distribution</div>',
+        `<div style="margin-bottom:0.5rem"><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Circulating</span><span style="color:var(--cyan)">${_fmt2(circ)} MIR (${pct(circ)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill" style="width:${pct(circ)}%;background:var(--cyan)"></div></div></div>`,
+        `<div style="margin-bottom:0.5rem"><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Burned (permanent)</span><span style="color:var(--crimson)">${_fmt2(burn)} MIR (${pct(burn)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill r" style="width:${pct(burn)}%"></div></div></div>`,
+        `<div><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--txt-dim);margin-bottom:0.2rem"><span>Network Rewards Pool</span><span style="color:var(--green)">${_fmt2(pool)} MIR (${pct(pool)}%)</span></div>`,
+        `<div class="pbar"><div class="pbar-fill g" style="width:${pct(pool)}%"></div></div></div>`,
+      '</div>',
+      '<div class="card">',
+        '<div class="card-title" style="margin-bottom:0.6rem">Protocol Constants</div>',
+        `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.65rem">`,
+          `<div style="color:var(--txt-dim)">Max Supply</div><div style="color:var(--txt-sec)">2,100,000.00000000 MIR</div>`,
+          `<div style="color:var(--txt-dim)">Burn Rate</div><div style="color:var(--crimson)">2% per upvote</div>`,
+          `<div style="color:var(--txt-dim)">OTC Fee (AI)</div><div style="color:var(--amber)">10% → Rewards Pool</div>`,
+          `<div style="color:var(--txt-dim)">Mining Epochs</div><div style="color:var(--green)">11 × 3yr (2025–2058)</div>`,
+          `<div style="color:var(--txt-dim)">Total Upvotes</div><div style="color:var(--txt-sec)">${t.totalUpvotes||0}</div>`,
+          `<div style="color:var(--txt-dim)">Total Burns</div><div style="color:var(--txt-sec)">${t.totalBurns||0}</div>`,
+        '</div>',
+      '</div>',
+    ].join('');
+  };
+
+  // ── mir:viewchange dispatcher ─────────────────────────────────────────────
+  window.addEventListener('mir:viewchange', e => {
+    const view = e.detail?.view;
+    requestAnimationFrame(() => {
+      const renderers = {
+        feed:        window.renderFeed,
+        scenarios:   window.renderScenarios,
+        predictions: window.renderPredictions,
+        market:      window.renderMarket,
+        ledger:      window.renderLedger,
+        leaderboard: window.renderLeaderboard,
+        tokenomics:  window.renderTokenomics,
+        cognitive:   typeof renderCognitive === 'function' ? renderCognitive : null,
+      };
+      if (view && renderers[view]) renderers[view]();
+    });
+  });
+
+  // ── mir:ready — initial render after DB loads ─────────────────────────────
+  window.addEventListener('mir:ready', () => {
+    requestAnimationFrame(() => {
+      window.renderFeed        && window.renderFeed();
+      window.renderScenarios   && window.renderScenarios();
+      window.renderPredictions && window.renderPredictions();
+      window.renderMarket      && window.renderMarket();
+      window.renderLedger      && window.renderLedger();
+      window.renderLeaderboard && window.renderLeaderboard();
+      window.renderTokenomics  && window.renderTokenomics();
+    });
+  });
+
+  // ── mir:synthesis_complete — live updates ─────────────────────────────────
+  window.addEventListener('mir:synthesis_complete', () => {
+    requestAnimationFrame(() => {
+      window.renderScenarios   && window.renderScenarios();
+      window.renderLeaderboard && window.renderLeaderboard();
+      window.renderTokenomics  && window.renderTokenomics();
+    });
+  });
+
+})();
+
 </script>
 
+
+<!-- ── Welcome Onboarding Overlay ──────────────────────────────────────── -->
+<div id="welcome-overlay" role="dialog" aria-modal="true" aria-label="Welcome to MIR Platform">
+  <div class="welcome-panel">
+    <div class="welcome-title">Welcome to MIR Platform v2.0</div>
+    <div class="welcome-step active" id="wstep-0">
+      <div class="welcome-step-title">Step 1 of 4 — What is MIR?</div>
+      <div class="welcome-text">MIR is a <strong style="color:var(--cyan)">decentralised sovereign intelligence platform</strong>. Analyse geopolitical scenarios, earn reputation (FRS), mine MIR tokens, and trade peer-to-peer — all without any central server controlling your account.</div>
+      <div class="welcome-text">Your identity is a <strong style="color:var(--green)">cryptographic keypair</strong> generated locally in your browser. No email. No password. No recovery service.</div>
+    </div>
+    <div class="welcome-step" id="wstep-1">
+      <div class="welcome-step-title">Step 2 of 4 — Your Public Key</div>
+      <div class="welcome-card pub">
+        <div class="welcome-card-title">&#x1F513; Public Key = Your Address</div>
+        <div class="welcome-text">Your <strong style="color:var(--green)">public key</strong> is like a bank account number — safe to share with anyone. Others use it to send you MIR and verify your identity.</div>
+      </div>
+      <div class="welcome-text" style="font-size:0.68rem;color:var(--txt-dim)">&#x2713; Share it freely &nbsp;&middot;&nbsp; &#x2713; Receive MIR with it &nbsp;&middot;&nbsp; &#x2713; Post it publicly</div>
+    </div>
+    <div class="welcome-step" id="wstep-2">
+      <div class="welcome-step-title">Step 3 of 4 — Your Private Key</div>
+      <div class="welcome-card priv">
+        <div class="welcome-card-title">&#x1F511; Private Key = Your Permanent Password</div>
+        <div class="welcome-text">Your <strong style="color:var(--crimson)">private key</strong> is the only proof you own your account. Generated once, locally, and never sent anywhere.</div>
+      </div>
+      <div class="welcome-warning">MIR is fully decentralised. If you lose your private key, your account and all funds are permanently and irrecoverably lost. There is no reset, no support, no exception. Write it down or use EXPORT BACKUP immediately after registration.</div>
+    </div>
+    <div class="welcome-step" id="wstep-3">
+      <div class="welcome-step-title">Step 4 of 4 — Lost Your Key?</div>
+      <div class="welcome-text">You can always <strong style="color:var(--amber)">re-register with a new keypair</strong>. Your new identity is a fresh <em>sovereign partition</em> — a completely independent account. Old data tied to the lost key is inaccessible by design.</div>
+      <div class="welcome-text"><strong style="color:var(--green)">Best practice:</strong> After registering, click EXPORT in your wallet and save an encrypted .json backup to an offline device.</div>
+      <div class="welcome-text" style="font-size:0.66rem;color:var(--txt-dim)">This overlay will not appear again after you close it.</div>
+    </div>
+    <div class="welcome-steps-indicator">
+      <div class="welcome-dot active" id="wdot-0"></div>
+      <div class="welcome-dot" id="wdot-1"></div>
+      <div class="welcome-dot" id="wdot-2"></div>
+      <div class="welcome-dot" id="wdot-3"></div>
+    </div>
+    <div class="welcome-nav">
+      <button class="welcome-btn skip" onclick="window._mirWelcome.close()">SKIP INTRO</button>
+      <button class="welcome-btn" id="welcome-next-btn" onclick="window._mirWelcome.next()">NEXT &#x2192;</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HELP HUD MODAL — injected by injectHelpHUD()
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="mir-help-modal" role="dialog" aria-modal="true" aria-label="MIR Help Center">
+  <div class="mir-help-panel">
+
+    <!-- Header -->
+    <div class="mir-help-header">
+      <div class="mir-help-title">SOVEREIGN HELP CENTRE</div>
+      <button class="mir-help-close" id="mir-help-close" aria-label="Close help">✕</button>
+    </div>
+
+    <!-- Language selector -->
+    <div class="mir-help-langs" id="mir-help-langs">
+      <button class="mir-help-lang active" data-lang="en">EN</button>
+      <button class="mir-help-lang"        data-lang="fa">فا</button>
+      <button class="mir-help-lang"        data-lang="ar">عر</button>
+      <button class="mir-help-lang"        data-lang="zh">中</button>
+      <button class="mir-help-lang"        data-lang="de">DE</button>
+    </div>
+
+    <!-- Category tabs -->
+    <div class="mir-help-tabs" id="mir-help-tabs">
+      <button class="mir-help-tab active" data-cat="dashboard_keys">Dashboard</button>
+      <button class="mir-help-tab"        data-cat="registration">Register</button>
+      <button class="mir-help-tab"        data-cat="commenting">Intel</button>
+      <button class="mir-help-tab"        data-cat="pouw_mining">Mining</button>
+      <button class="mir-help-tab"        data-cat="trading">OTC</button>
+      <button class="mir-help-tab"        data-cat="charting">Scenarios</button>
+      <button class="mir-help-tab"        data-cat="support">Support</button>
+      <button class="mir-help-tab"        data-cat="private_key_security" style="border-color:#440000;color:#440000">🔑 Key Safety</button>
+      <button class="mir-help-tab"        data-cat="public_key_identity">Identity</button>
+    </div>
+
+    <!-- Content -->
+    <div class="mir-help-body" id="mir-help-body">
+      <div class="mir-help-sec-warn" id="mir-help-sec-warn"></div>
+      <div id="mir-help-content">
+        <div class="mir-help-thinking" id="mir-help-loading">Loading help data...</div>
+      </div>
+      <div id="mir-help-ai-log"></div>
+    </div>
+
+    <!-- Query input -->
+    <div class="mir-help-input-row">
+      <input class="mir-help-input" id="mir-help-input"
+             type="text" maxlength="300"
+             placeholder="Ask a question..."
+             autocomplete="off" spellcheck="false"/>
+      <button class="mir-help-ask-btn" id="mir-help-ask-btn">ASK</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAB — floating ? button, always on top -->
+<button id="mir-help-fab" aria-label="Open help centre" title="Help (?)">?</button>
+
 </body>
+
+<script>
+// ── Welcome Onboarding Controller ────────────────────────────────────────
+(function initWelcomeOverlay() {
+  'use strict';
+  const VISITED_KEY = 'mir_onboarding_done_v2';
+  const TOTAL_STEPS = 4;
+  let   _step       = 0;
+
+  window._mirWelcome = {
+    show() {
+      const ov = document.getElementById('welcome-overlay');
+      if (ov) ov.classList.add('open');
+      _goTo(0);
+    },
+    close() {
+      const ov = document.getElementById('welcome-overlay');
+      if (ov) ov.classList.remove('open');
+      try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
+    },
+    next() {
+      if (_step < TOTAL_STEPS - 1) { _goTo(_step + 1); }
+      else { window._mirWelcome.close(); }
+    },
+  };
+
+  function _goTo(n) {
+    _step = n;
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      const st = document.getElementById('wstep-' + i);
+      const dt = document.getElementById('wdot-' + i);
+      if (st) st.classList.toggle('active', i === n);
+      if (dt) dt.classList.toggle('active', i === n);
+    }
+    const btn = document.getElementById('welcome-next-btn');
+    if (btn) btn.textContent = (n === TOTAL_STEPS - 1) ? 'GET STARTED →' : 'NEXT →';
+  }
+
+  // Only show on first visit, after boot overlay clears
+  try {
+    if (!localStorage.getItem(VISITED_KEY)) {
+      const tryShow = () => {
+        const boot = document.getElementById('boot-overlay');
+        if (!boot || boot.classList.contains('hidden')) {
+          window._mirWelcome.show();
+          return;
+        }
+        const obs = new MutationObserver(() => {
+          if (boot.classList.contains('hidden')) {
+            obs.disconnect();
+            setTimeout(() => window._mirWelcome.show(), 350);
+          }
+        });
+        obs.observe(boot, { attributes: true, attributeFilter: ['class'] });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(tryShow, 900));
+      } else {
+        setTimeout(tryShow, 900);
+      }
+    }
+  } catch {}
+})();
+</script>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   HELP HUD CONTROLLER  v2.1
+   Self-contained IIFE. Defines window.injectHelpHUD which is called
+   by bootstrapApplication() after boot completes.
+   Plain <script> runs synchronously during parse → defined before the
+   async module code calls it.
+   ═══════════════════════════════════════════════════════════════════════ */
+window.injectHelpHUD = (function () {
+  'use strict';
+
+  /* ── State ─────────────────────────────────────────────────────────── */
+  let _helpData  = null;
+  let _loading   = false;
+  let _lang      = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  if (!['en','fa','ar','zh','de'].includes(_lang)) _lang = 'en';
+  let _cat       = 'dashboard_keys';
+  let _aiPending = false;
+
+  /* ── DOM helpers ───────────────────────────────────────────────────── */
+  const $   = id  => document.getElementById(id);
+  const $$  = sel => document.querySelectorAll(sel);
+  const esc = s   => String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  /* ── URL resolver (no import.meta.url — plain script context) ───────── */
+  function _resolveURL(filename) {
+    try {
+      const loc = window.location.href;
+      const dir = loc.endsWith('/') ? loc : loc.slice(0, loc.lastIndexOf('/') + 1);
+      return dir + filename;
+    } catch { return './' + filename; }
+  }
+
+  /* ── Lazy help data loader ─────────────────────────────────────────── */
+  async function _loadHelpData() {
+    if (_helpData) return _helpData;
+    if (_loading)  return null;
+    _loading = true;
+    try {
+      const url = _resolveURL('help_content.js');
+      console.log('[HELP] Loading:', url);
+      const mod  = await import(url);
+      _helpData  = mod.HELP_DATA || mod.default?.HELP_DATA || null;
+      if (!_helpData) throw new Error('HELP_DATA not exported');
+      console.log('[HELP] Loaded', Object.keys(_helpData).length, 'categories');
+      return _helpData;
+    } catch (e) {
+      console.warn('[HELP] help_content.js failed:', e.message);
+      _helpData = null;
+      return null;
+    } finally { _loading = false; }
+  }
+
+  /* ── Category renderer ─────────────────────────────────────────────── */
+  function _render(catKey, lang) {
+    const content = $('mir-help-content');
+    if (!content) return;
+    if (!_helpData) {
+      content.innerHTML = '<div class="mir-help-thinking">Help data unavailable.</div>';
+      return;
+    }
+    const catObj   = _helpData[catKey];
+    if (!catObj) { content.innerHTML = '<div class="mir-help-thinking">Category not found.</div>'; return; }
+    const safeLang = ['en','fa','ar','zh','de'].includes(lang) ? lang : 'en';
+    const section  = catObj[safeLang] || catObj['en'];
+    if (!section)  { content.innerHTML = '<div class="mir-help-thinking">Translation unavailable.</div>'; return; }
+
+    /* Security warning */
+    const warnEl = $('mir-help-sec-warn');
+    if (warnEl) {
+      if (section.WARNING) {
+        warnEl.innerHTML = '<strong>⚠ SECURITY:</strong> ' + esc(section.WARNING);
+        warnEl.classList.add('visible');
+      } else {
+        warnEl.classList.remove('visible');
+      }
+    }
+
+    /* Build content */
+    const parts = ['<div class="mir-help-section-title">' + esc(section.title || catKey) + '</div>'];
+    if (section.summary) parts.push('<div class="mir-help-summary">' + esc(section.summary) + '</div>');
+
+    (section.items || []).forEach(item => {
+      if (item.q && item.a) {
+        parts.push(
+          '<div class="mir-help-item">' +
+            '<div class="mir-help-q">' + esc(item.q) + '</div>' +
+            '<div class="mir-help-a">' + esc(item.a) + '</div>' +
+          '</div>'
+        );
+      } else if (item.key && item.desc) {
+        parts.push(
+          '<div class="mir-help-kd">' +
+            '<span class="mir-help-key">' + esc(item.key) + '</span>' +
+            '<span class="mir-help-kdesc">' + esc(item.desc) + '</span>' +
+          '</div>'
+        );
+      }
+    });
+
+    content.innerHTML = parts.join('');
+    const body = $('mir-help-body');
+    if (body) body.scrollTop = 0;
+    const aiLog = $('mir-help-ai-log');
+    if (aiLog) aiLog.innerHTML = '';
+  }
+
+  /* ── Open / Close ──────────────────────────────────────────────────── */
+  async function _open() {
+    const modal = $('mir-help-modal');
+    if (!modal) return;
+    modal.classList.add('open');
+    $('mir-help-input')?.focus();
+    if (!_helpData && !_loading) {
+      const c = $('mir-help-content');
+      if (c) c.innerHTML = '<div class="mir-help-thinking">▸ loading knowledge base...</div>';
+      await _loadHelpData();
+      if (_helpData) _render(_cat, _lang);
+    }
+  }
+
+  function _close() {
+    $('mir-help-modal')?.classList.remove('open');
+  }
+
+  /* ── Tab + Lang switches ───────────────────────────────────────────── */
+  function _switchTab(catKey) {
+    _cat = catKey;
+    $$('.mir-help-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === catKey));
+    if (_helpData) _render(catKey, _lang);
+  }
+
+  function _switchLang(lang) {
+    _lang = lang;
+    $$('.mir-help-lang').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    const panel = document.querySelector('.mir-help-panel');
+    if (panel) panel.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
+    const placeholders = { en:'Ask a question…', fa:'سؤال بپرسید…', ar:'اطرح سؤالاً…', zh:'请提问…', de:'Frage stellen…' };
+    const inp = $('mir-help-input');
+    if (inp) inp.placeholder = placeholders[lang] || 'Ask a question…';
+    if (_helpData) _render(_cat, lang);
+  }
+
+  /* ── Ask / AI query ────────────────────────────────────────────────── */
+  async function _ask(query) {
+    if (!query || !query.trim() || _aiPending) return;
+    _aiPending = true;
+    const btn = $('mir-help-ask-btn');
+    const inp = $('mir-help-input');
+    const log = $('mir-help-ai-log');
+    if (btn) btn.disabled = true;
+    if (inp) inp.value = '';
+
+    if (log) {
+      const t = document.createElement('div');
+      t.className = 'mir-help-thinking'; t.id = 'mir-help-thinking-indicator';
+      t.textContent = '▸ processing…';
+      log.appendChild(t);
+      const body = $('mir-help-body');
+      if (body) body.scrollTop = body.scrollHeight;
+    }
+
+    let answer = null, source = 'local';
+    try {
+      const support = window._mirSupport;
+      if (support && typeof support.askSupport === 'function') {
+        const result = await support.askSupport(query, _lang);
+        answer = result?.answer || null;
+        source = result?.source || 'local';
+      } else {
+        answer = _localSearch(query);
+      }
+    } catch (e) { answer = _localSearch(query); }
+
+    document.getElementById('mir-help-thinking-indicator')?.remove();
+
+    if (log && answer) {
+      const msg = document.createElement('div');
+      msg.className = 'mir-help-ai-msg';
+      msg.innerHTML =
+        '<div class="mir-help-ai-q">▸ ' + esc(query) + '</div>' +
+        '<div class="mir-help-ai-a">' + esc(answer) + '</div>' +
+        '<div class="mir-help-ai-src">' + (source === 'ai' ? '⬡ AI · live' : '◈ local knowledge') + '</div>';
+      log.appendChild(msg);
+      const body = $('mir-help-body');
+      if (body) body.scrollTop = body.scrollHeight;
+    }
+
+    if (btn) btn.disabled = false;
+    if (inp) inp.focus();
+    _aiPending = false;
+  }
+
+  /* ── Local keyword search fallback ────────────────────────────────── */
+  function _localSearch(query) {
+    if (!_helpData) return 'Help data not loaded. Check that help_content.js is uploaded.';
+    const q = query.toLowerCase();
+    let best = null, bestScore = 0;
+    Object.values(_helpData).forEach(catObj => {
+      const section = catObj[_lang] || catObj['en'];
+      if (!section) return;
+      (section.items || []).forEach(item => {
+        const text  = ((item.q || item.key || '') + ' ' + (item.a || item.desc || '')).toLowerCase();
+        const score = q.split(/\s+/).filter(w => w.length > 2 && text.includes(w)).length;
+        if (score > bestScore) { bestScore = score; best = item.a || item.desc; }
+      });
+    });
+    return best || 'No exact match. Try a different keyword or browse the category tabs.';
+  }
+
+  /* ── Inject ? button into #nav-right ──────────────────────────────── */
+  function _injectNavButton() {
+    if ($('hud-help-btn')) return;
+    const navRight = $('nav-right');
+    if (!navRight) return;
+    const btn = document.createElement('button');
+    btn.id          = 'hud-help-btn';
+    btn.className   = 'nbtn';
+    btn.title       = 'Help Centre';
+    btn.textContent = '?';
+    btn.addEventListener('click',      _open);
+    btn.addEventListener('mouseenter', () => { if (!_helpData && !_loading) _loadHelpData(); });
+    const sbToggle = $('sb-toggle');
+    sbToggle ? navRight.insertBefore(btn, sbToggle) : navRight.appendChild(btn);
+  }
+
+  /* ── Wire all event listeners ──────────────────────────────────────── */
+  function _wireEvents() {
+    $('mir-help-fab')?.addEventListener('click', _open);
+    $('mir-help-fab')?.addEventListener('mouseenter', () => { if (!_helpData && !_loading) _loadHelpData(); });
+    $('mir-help-close')?.addEventListener('click', _close);
+    $('mir-help-modal')?.addEventListener('click', e => {
+      if (e.target === $('mir-help-modal')) _close();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && $('mir-help-modal')?.classList.contains('open')) _close();
+    });
+    $$('.mir-help-tab').forEach(btn  => btn.addEventListener('click', () => _switchTab(btn.dataset.cat)));
+    $$('.mir-help-lang').forEach(btn => btn.addEventListener('click', () => _switchLang(btn.dataset.lang)));
+    $('mir-help-ask-btn')?.addEventListener('click', () => {
+      const v = $('mir-help-input')?.value?.trim();
+      if (v) _ask(v);
+    });
+    $('mir-help-input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { const v = e.target.value?.trim(); if (v) _ask(v); }
+    });
+
+    /* Set initial active lang button to match detected language */
+    $$('.mir-help-lang').forEach(b => b.classList.toggle('active', b.dataset.lang === _lang));
+  }
+
+  /* ── Public entry point ────────────────────────────────────────────── */
+  return function injectHelpHUD() {
+    if ($('hud-help-btn')) return; /* idempotent */
+    _injectNavButton();
+    _wireEvents();
+    /* Preload help data immediately */
+    _loadHelpData();
+    /* Show FAB with bounce */
+    requestAnimationFrame(() => {
+      const fab = $('mir-help-fab');
+      if (fab) fab.classList.add('ready');
+    });
+    /* Expose API */
+    window._mirHelpHUD = { open: _open, close: _close, ask: _ask };
+    console.log('[HELP] HUD injected, lang:', _lang);
+  };
+})();
+</script>
+
 </html>
