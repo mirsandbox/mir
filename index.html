@@ -1246,6 +1246,41 @@ select.ifield   { cursor: pointer; }
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Floating Action Button (FAB) — fixed bottom-right, always on top */
+/* Identity & Security re-entry FAB */
+#mir-identity-fab {
+  position:   fixed;
+  bottom:     76px;
+  right:      22px;
+  z-index:    99998;
+  width:      44px;
+  height:     44px;
+  border-radius: 50%;
+  background: #000;
+  border:     1.5px solid var(--amber, #ffab00);
+  color:      var(--amber, #ffab00);
+  font-size:  1rem;
+  cursor:     pointer;
+  display:    flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(255,171,0,0.25);
+  transition: all 0.2s;
+  opacity:    0;
+  pointer-events: none;
+  transform:  scale(0.6);
+  line-height: 1;
+}
+#mir-identity-fab.ready {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+}
+#mir-identity-fab:hover {
+  box-shadow: 0 0 20px rgba(255,171,0,0.5);
+  transform:  scale(1.08);
+}
+
 #mir-help-fab {
   position:   fixed;
   bottom:     22px;
@@ -1820,6 +1855,13 @@ select.ifield   { cursor: pointer; }
       <span class="sb-nav-icon">▲</span>
       <span class="sb-nav-label">Leaderboard</span>
       <span class="sb-nav-badge" id="nb-leaderboard">—</span>
+    </div>
+    <div class="sb-nav-item" id="nav-item-identity-security"
+         title="View or download your sovereign keys"
+         onclick="window._mirWelcome?.openIdentityView ? window._mirWelcome.openIdentityView() : window._mirWelcome?.show()"
+         style="border-top:1px solid var(--border-deep);margin-top:0.4rem;padding-top:0.55rem">
+      <span class="sb-nav-icon" style="color:var(--amber)">🔑</span>
+      <span class="sb-nav-label" style="color:var(--amber)">Identity &amp; Security</span>
     </div>
     <div class="sb-nav-item" id="nav-item-tokenomics"         onclick="setView('tokenomics')">
       <span class="sb-nav-icon">⟳</span>
@@ -2657,12 +2699,27 @@ async function bootstrapApplication() {
     console.log('[BOOT] API console ready');
   } catch (e) { console.warn('[BOOT] api_console.js:', e.message); }
 
-  // ── Welcome Overlay — lazy-loaded, shown only on first visit ──────────
+  // ── Welcome Overlay — lazy-loaded; inline IIFE owns auto-show logic ────
+  // _WO_INITIALIZED is set by the inline IIFE that runs at parse-time.
+  // welcome_overlay.js upgrades window._mirWelcome with richer API methods
+  // (multi-step wizard, identity view) but does NOT re-trigger auto-show.
   try {
     const woURL = _resolve('welcome_overlay.js');
     const WOMod = await import(woURL);
     if (typeof WOMod.initWelcomeOverlay === 'function') {
+      // Mark as initialized BEFORE calling so welcome_overlay.js
+      // internal guard skips its own auto-show (already handled by inline IIFE)
+      window._WO_INITIALIZED = true;
       WOMod.initWelcomeOverlay();
+      // Merge any richer methods from the module without overwriting show/close
+      if (window._mirWelcome && WOMod.show) {
+        // Keep existing show/close that reference the inline DOM
+        // but add openIdentityView if the module provides it
+        if (typeof WOMod.close === 'function') {
+          const _existingClose = window._mirWelcome.close;
+          window._mirWelcome.close = () => { _existingClose(); try { WOMod.close(); } catch {} };
+        }
+      }
       console.log('[BOOT] Welcome overlay ready');
     }
   } catch (e) {
@@ -3452,6 +3509,12 @@ document.addEventListener('keydown', (e) => {
 </div>
 
 <!-- FAB — floating ? button, always on top -->
+<button id="mir-identity-fab"
+        aria-label="Identity &amp; Security"
+        title="Identity &amp; Security — view or download your keys"
+        onclick="window._mirWelcome && window._mirWelcome.openIdentityView ? window._mirWelcome.openIdentityView() : (window._mirWelcome && window._mirWelcome.show())">
+  🔑
+</button>
 <button id="mir-help-fab" aria-label="Open help centre" title="Help (?)">?</button>
 
 </body>
@@ -3460,12 +3523,17 @@ document.addEventListener('keydown', (e) => {
 // ── Welcome Onboarding Controller ────────────────────────────────────────
 (function initWelcomeOverlay() {
   'use strict';
+  // ── Single-init guard — prevents double-initialization with welcome_overlay.js ──
+  if (window._WO_INITIALIZED) return;
+  window._WO_INITIALIZED = true;
+
   const VISITED_KEY = 'mir_onboarding_done_v2';
   const TOTAL_STEPS = 4;
   let   _step       = 0;
 
   window._mirWelcome = {
-    show() {
+    // show() — always opens regardless of visited state (re-entry port)
+    show(force = false) {
       const ov = document.getElementById('welcome-overlay');
       if (ov) ov.classList.add('open');
       _goTo(0);
@@ -3475,9 +3543,18 @@ document.addEventListener('keydown', (e) => {
       if (ov) ov.classList.remove('open');
       try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
     },
+    // openIdentityView() — opens overlay and jumps to key security step (step 2)
+    openIdentityView() {
+      const ov = document.getElementById('welcome-overlay');
+      if (ov) ov.classList.add('open');
+      _goTo(2);   // step 2 = Private Key / security info
+    },
     next() {
       if (_step < TOTAL_STEPS - 1) { _goTo(_step + 1); }
       else { window._mirWelcome.close(); }
+    },
+    back() {
+      if (_step > 0) _goTo(_step - 1);
     },
   };
 
@@ -3493,10 +3570,13 @@ document.addEventListener('keydown', (e) => {
     if (btn) btn.textContent = (n === TOTAL_STEPS - 1) ? 'GET STARTED →' : 'NEXT →';
   }
 
-  // Only show on first visit, after boot overlay clears
+  // Auto-show only on first visit, after boot overlay clears
   try {
     if (!localStorage.getItem(VISITED_KEY)) {
       const tryShow = () => {
+        // Double-check another controller hasn't already shown it
+        const ov = document.getElementById('welcome-overlay');
+        if (ov && ov.classList.contains('open')) return;
         const boot = document.getElementById('boot-overlay');
         if (!boot || boot.classList.contains('hidden')) {
           window._mirWelcome.show();
@@ -3505,7 +3585,10 @@ document.addEventListener('keydown', (e) => {
         const obs = new MutationObserver(() => {
           if (boot.classList.contains('hidden')) {
             obs.disconnect();
-            setTimeout(() => window._mirWelcome.show(), 350);
+            setTimeout(() => {
+              const ov2 = document.getElementById('welcome-overlay');
+              if (ov2 && !ov2.classList.contains('open')) window._mirWelcome.show();
+            }, 350);
           }
         });
         obs.observe(boot, { attributes: true, attributeFilter: ['class'] });
@@ -3781,10 +3864,12 @@ window.injectHelpHUD = (function () {
     _wireEvents();
     /* Preload help data immediately */
     _loadHelpData();
-    /* Show FAB with bounce */
+    /* Show FABs with bounce */
     requestAnimationFrame(() => {
-      const fab = $('mir-help-fab');
-      if (fab) fab.classList.add('ready');
+      const fab  = $('mir-help-fab');
+      const ifab = $('mir-identity-fab');
+      if (fab)  fab.classList.add('ready');
+      if (ifab) ifab.classList.add('ready');
     });
     /* Expose API */
     window._mirHelpHUD = { open: _open, close: _close, ask: _ask };

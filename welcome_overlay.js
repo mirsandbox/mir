@@ -900,29 +900,44 @@ export const back        = module_exports.back;
  * Shows only on first visit; silent no-op on subsequent visits.
  */
 export function initWelcomeOverlay() {
-  // Inject DOM first (idempotent)
   _inject();
 
-  // Expose on window for onclick handlers
-  window._mirWelcome = module_exports;
+  // Merge richer methods into existing window._mirWelcome (set by inline IIFE).
+  // Never replace the whole object — inline IIFE's show/close reference inline DOM.
+  if (window._mirWelcome) {
+    if (!window._mirWelcome.openIdentityView) {
+      window._mirWelcome.openIdentityView = module_exports.openIdentityView;
+    }
+    if (!window._mirWelcome.back) {
+      window._mirWelcome.back = module_exports.back;
+    }
+    window._mirWelcome._generateIdentity = module_exports._generateIdentity;
+    window._mirWelcome._exportBackup     = module_exports._exportBackup;
+    window._mirWelcome._proceedToApp     = module_exports._proceedToApp;
+    window._mirWelcome._openImport       = module_exports._openImport;
+    window._mirWelcome._skipAccess       = module_exports._skipAccess;
+  } else {
+    window._mirWelcome = module_exports;
+  }
 
-  // First-visit check
+  // Skip auto-show if inline IIFE already owns it
+  if (window._WO_INITIALIZED) return;
+  window._WO_INITIALIZED = true;
+
   try {
-    if (localStorage.getItem(VISITED_KEY)) return; // already onboarded
+    if (localStorage.getItem(VISITED_KEY)) return;
   } catch { return; }
 
-  // Wait for boot overlay to hide
   const boot = document.getElementById('boot-overlay');
   if (!boot || boot.classList.contains('hidden')) {
     setTimeout(_open, 500);
     return;
   }
-
-  // Watch for boot overlay to clear
   const obs = new MutationObserver(() => {
     if (boot.classList.contains('hidden')) {
       obs.disconnect();
-      setTimeout(_open, 400);
+      const ov = document.getElementById('welcome-overlay');
+      if (ov && !ov.classList.contains('open')) setTimeout(_open, 400);
     }
   });
   obs.observe(boot, { attributes: true, attributeFilter: ['class'] });
