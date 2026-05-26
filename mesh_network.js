@@ -898,7 +898,15 @@ function _onPeerMessage(peerId, msg) {
 
     case 'osint_alert': {
       if (msg.headline && msg.severity) {
-        window.dispatchEvent(new CustomEvent('mir:peer_osint_alert', { detail: msg }));
+        window.dispatchEvent(new CustomEvent('mir:peer_osint_alert', { detail: { ...msg, peerId } }));
+      }
+      break;
+    }
+
+    case 'feed_item': {
+      // Live OSINT item broadcast from a peer node
+      if (msg.item && msg.item.headline) {
+        window.dispatchEvent(new CustomEvent('mir:peer_feed_item', { detail: { item: msg.item, peerId } }));
       }
       break;
     }

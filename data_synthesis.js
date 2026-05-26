@@ -502,6 +502,65 @@ export function dsClearQueues() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SECTION 8b: OSINT SIGNAL INGESTION
+// Converts a live OSINT item into a semantic 6D signal and pushes it as
+// a local delta into the data synthesis pipeline.
+// This lets real-world news directly influence agent semantic weight tuning.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Category → agent affinity mapping (which agent is most sensitive to this signal)
+const OSINT_CATEGORY_MAP = {
+  geopolitical: { primary: 'geo',      dims: [0.9, 0.4, 0.3, 0.7, 0.6, 0.8] },
+  macro:        { primary: 'macro',    dims: [0.3, 0.9, 0.2, 0.5, 0.7, 0.7] },
+  cyber:        { primary: 'cyber',    dims: [0.2, 0.3, 0.95, 0.4, 0.8, 0.9] },
+  general:      { primary: 'resident', dims: [0.5, 0.5, 0.5,  0.6, 0.5, 0.6] },
+};
+
+const SEVERITY_LR = { critical: 0.18, high: 0.10, medium: 0.05, low: 0.02 };
+
+/**
+ * onOSINTSignal(item)
+ * Public entry — called from ai_evolution.js _ingestOSINTItem.
+ * Converts OSINT severity + category into a semantic 6D signal push.
+ *
+ * @param {{ category, severity, keywords, ts }} item
+ */
+export function onOSINTSignal(item) {
+  if (!item) return;
+  const category = item.category || 'general';
+  const mapping  = OSINT_CATEGORY_MAP[category] || OSINT_CATEGORY_MAP.general;
+  const lr       = SEVERITY_LR[item.severity]   || SEVERITY_LR.low;
+  const ts       = item.ts || Date.now();
+
+  // Clamp signal dims between 0 and 1
+  const signal6D = mapping.dims.map(v => Math.max(0, Math.min(1, v)));
+
+  // Push as local delta — will be batch-processed by GPU pipeline
+  pushLocalDelta({
+    agentId:   mapping.primary,
+    signal6D,
+    lr,
+    ts,
+    sovereign: false,
+    source:    'osint',
+  });
+
+  // Also nudge all other agents with a weaker echo signal (inter-agent correlation)
+  const echoSignal = signal6D.map(v => 0.3 + v * 0.4);  // dampened
+  DS_AGENT_IDS.forEach(id => {
+    if (id === mapping.primary) return;
+    pushLocalDelta({
+      agentId:   id,
+      signal6D:  echoSignal,
+      lr:        lr * 0.3,
+      ts,
+      sovereign: false,
+      source:    'osint_echo',
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SECTION 9: MODULE ENTRY POINT
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -527,6 +586,7 @@ export async function initDataSynthesis({ db, GPU, writeBack }) {
   // Expose on window for ai_evolution.js and mesh_network.js
   window._mirDS = {
     pushLocalDelta, onPeerVector, dsGetStatus, dsFlushNow, dsClearQueues,
+    onOSINTSignal,   // called from ai_evolution.js _ingestOSINTItem
   };
 
   console.log('[DS] Data synthesis pipeline ready — GPU:', _GPU?.gpuIsAvailable?.() || false);

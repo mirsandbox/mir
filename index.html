@@ -3029,38 +3029,59 @@ document.addEventListener('keydown', (e) => {
   window.renderFeed = function renderFeed() {
     const container = _el('feed-container');
     if (!container) return;
-    const data = window.getFeedData ? window.getFeedData() : [];
+    const data  = window.getFeedData ? window.getFeedData() : [];
     const items = Array.isArray(data) ? data : [];
     _setText('nb-feed', String(items.length));
     if (!items.length) {
-      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No intelligence items yet. Be the first to submit.</div>';
+      container.innerHTML = '<div class="tdim txs" style="padding:2rem;text-align:center">No intelligence items yet. Live OSINT feeds load within 15 seconds of boot.</div>';
       return;
     }
+
+    const SEVERITY_COLOUR = {
+      critical: 'var(--crimson)', high: 'var(--amber)',
+      medium: 'var(--cyan)', low: 'var(--txt-dim)',
+    };
+
     const frag = document.createDocumentFragment();
-    items.slice().reverse().slice(0, 80).forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.style.marginBottom = '0.7rem';
-      const upvotes  = item.upvotes || 0;
-      const prob     = item.credibility || item.prob || 0;
-      const tagHtml  = (item.tags || []).map(t =>
-        `<span class="tbadge" style="background:rgba(0,212,255,0.06);color:var(--txt-dim);margin-right:0.25rem">${_esc(t)}</span>`
+    items.slice(0, 100).forEach(item => {
+      const card      = document.createElement('div');
+      card.className  = 'card';
+      card.style.marginBottom = '0.6rem';
+      const upvotes   = item.upvotes || 0;
+      const severity  = item.severity || '';
+      const sevColour = SEVERITY_COLOUR[severity] || 'var(--txt-dim)';
+      const isLive    = item.live || item.source;
+      const tags      = item.tags || item.keywords || [];
+      const tagHtml   = tags.slice(0, 5).map(t =>
+        `<span class="tbadge" style="background:rgba(0,212,255,0.05);color:var(--txt-dim);margin-right:0.2rem;font-size:0.55rem">${_esc(t)}</span>`
       ).join('');
+      const categoryBadge = isLive
+        ? `<span class="tbadge" style="background:rgba(0,255,136,0.06);color:var(--green);font-size:0.55rem;text-transform:uppercase">${_esc(item.category || item.source || 'live')}</span>`
+        : '';
+      const severityBadge = severity
+        ? `<span class="tbadge" style="border-color:${sevColour};color:${sevColour};font-size:0.55rem;text-transform:uppercase;margin-left:0.25rem">${severity}</span>`
+        : '';
+      const urlLink = item.url
+        ? `<a href="${_esc(item.url)}" target="_blank" rel="noopener noreferrer" style="font-size:0.58rem;color:var(--cyan);text-decoration:none">↗ Source</a>`
+        : '';
+
       card.innerHTML = [
         '<div class="card-hd">',
-          '<div>',
-            `<div class="card-title">${_esc(item.headline || item.title || '')}</div>`,
-            `<div class="card-sub" style="margin-top:0.2rem">${_esc(item.body || item.analysis || '')}</div>`,
+          '<div style="flex:1;min-width:0">',
+            `<div class="card-title" style="${severity === 'critical' ? 'color:var(--crimson)' : ''}">${_esc(item.headline || item.title || '')}</div>`,
+            item.body ? `<div class="card-sub" style="margin-top:0.2rem;line-height:1.5">${_esc((item.body || item.analysis || '').slice(0, 180))}${(item.body||'').length > 180 ? '…' : ''}</div>` : '',
           '</div>',
-          `<span class="tbadge tbadge-g" style="white-space:nowrap">▲ ${upvotes}</span>`,
+          `<span class="tbadge" style="white-space:nowrap;border-color:var(--border)">▲ ${upvotes}</span>`,
         '</div>',
-        tagHtml ? `<div style="margin-top:0.35rem">${tagHtml}</div>` : '',
-        `<div style="display:flex;gap:0.75rem;margin-top:0.4rem;font-size:0.6rem;color:var(--txt-dim)">`,
-          `<span>${_esc(item.author || item.authorId || 'anonymous')}</span>`,
+        tagHtml ? `<div style="margin-top:0.3rem">${tagHtml}</div>` : '',
+        `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.4rem;font-size:0.58rem;color:var(--txt-dim)">`,
+          categoryBadge, severityBadge,
+          `<span>${_esc(item.author || item.authorId || item.source || 'intel')}</span>`,
           `<span>${_timeAgo(item.ts || item.timestamp)}</span>`,
+          urlLink,
           item.frs ? `<span>FRS ${item.frs}</span>` : '',
-          `<button onclick="window.upvoteIntel&&window.upvoteIntel('${_esc(item.id||'')}',this)" `,
-            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.1rem 0.35rem;font-size:0.6rem;color:var(--txt-dim);cursor:pointer">▲ Upvote</button>`,
+          !item.live ? `<button onclick="window.upvoteIntel&&window.upvoteIntel('${_esc(item.id||'')}',this)" ` +
+            `style="background:transparent;border:1px solid var(--border);border-radius:3px;padding:0.08rem 0.3rem;font-size:0.58rem;color:var(--txt-dim);cursor:pointer;margin-left:auto">▲ Upvote</button>` : '',
         '</div>',
       ].join('');
       frag.appendChild(card);

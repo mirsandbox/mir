@@ -102,18 +102,81 @@ const AGENT_FALLBACKS = {
   ],
 };
 
-const OSINT_SYNTHETIC_FEED = [
-  { headline:'Taiwan Strait: PLA sortie rate at 12-month high amid 3rd Fleet repositioning',    keywords:['taiwan','conflict','military'],    severity:'critical' },
-  { headline:'Federal Reserve emergency session: 75bps rate corridor collapse signalled',       keywords:['macro','yield curve','fed'],       severity:'high' },
-  { headline:'Sandworm APT confirms zero-day in European power grid SCADA systems',            keywords:['cyber','scada','apt'],             severity:'critical' },
-  { headline:'Saudi-China yuan oil settlement crosses $50B quarterly threshold',               keywords:['macro','cbdc','energy','china'],   severity:'high' },
-  { headline:'NATO Article 4 consultations: 3 Baltic member states invoke clause',            keywords:['nato','geopolitics','escalation'],  severity:'high' },
-  { headline:'Arctic Council suspended: maritime boundary dispute escalates',                  keywords:['arctic','nato','geopolitics'],      severity:'medium' },
-  { headline:'G7 CBDC cross-border settlement protocol live: $2.1T cleared in pilot',        keywords:['cbdc','macro','g7'],               severity:'medium' },
-  { headline:'CVE-2025-8823: zero-day impacts financial clearing in 47 nations',             keywords:['cyber','critical-infrastructure'],  severity:'critical' },
-  { headline:'Eurasian pipeline bypass operational: Russia-China corridor avoids Western grid',keywords:['energy','eurasia','macro'],          severity:'medium' },
-  { headline:'South China Sea: 4 ASEAN navies conduct joint drills after PLA incursion',    keywords:['geopolitics','taiwan','naval'],      severity:'high' },
+// ── OSINT Feed Sources — CORS-safe, GitHub Pages compatible ──────────────
+// Proxy strategy: allorigins.win wraps any URL for CORS.
+// rss2json converts RSS → JSON (500 req/day free, no key required).
+// Direct JSON APIs (World Bank, ECB) are natively CORS-enabled.
+const OSINT_FEED_SOURCES = [
+  // Geopolitical / news
+  {
+    id: 'reuters_world',
+    url: 'https://feeds.reuters.com/reuters/worldNews',
+    proxy: 'rss2json',
+    category: 'geopolitical',
+    weight: 1.0,
+  },
+  {
+    id: 'ap_world',
+    url: 'https://rsshub.app/apnews/topics/apf-intlnews',
+    proxy: 'allorigins',
+    category: 'geopolitical',
+    weight: 0.9,
+  },
+  {
+    id: 'bbc_world',
+    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    proxy: 'rss2json',
+    category: 'geopolitical',
+    weight: 0.9,
+  },
+  // Macroeconomic
+  {
+    id: 'ft_economics',
+    url: 'https://www.ft.com/?format=rss',
+    proxy: 'rss2json',
+    category: 'macro',
+    weight: 0.85,
+  },
+  {
+    id: 'ecb_press',
+    url: 'https://www.ecb.europa.eu/rss/press.html',
+    proxy: 'allorigins',
+    category: 'macro',
+    weight: 0.8,
+  },
+  // Cyber / tech
+  {
+    id: 'krebs_security',
+    url: 'https://krebsonsecurity.com/feed/',
+    proxy: 'rss2json',
+    category: 'cyber',
+    weight: 0.85,
+  },
+  {
+    id: 'theregister',
+    url: 'https://www.theregister.com/headlines.atom',
+    proxy: 'rss2json',
+    category: 'cyber',
+    weight: 0.7,
+  },
 ];
+
+// Proxy base URLs — zero config, no API key required
+const OSINT_PROXIES = {
+  rss2json:   'https://api.rss2json.com/v1.api.json?rss_url=',
+  allorigins: 'https://api.allorigins.win/raw?url=',
+};
+
+// Keyword → severity mapping for alert system
+const OSINT_ALERT_KEYWORDS = {
+  critical: ['nuclear','escalation','attack','invasion','strike','missile','coup','martial law'],
+  high:     ['sanction','default','crisis','collapse','breach','zero-day','exploit','recession'],
+  medium:   ['tension','warning','concern','slowdown','incident','vulnerability'],
+};
+
+// Per-source fetch state
+const _osintFetchState = {};   // sourceId → { lastFetch, etag, itemIds: Set }
+let   _osintFetchIndex = 0;    // rotating source index for rate-limit friendly fetching
 
 // ── Module State ──────────────────────────────────────────────────────────
 let _DB = null, _SES = null, _KDF = null, _Meta = null, _Mesh = null, _CRDT = null;
@@ -629,39 +692,221 @@ function _executeDreamConsolidation() {
 }
 
 // ── OSINT Feed Parser + Flash Alerts ─────────────────────────────────────
-function _parseOSINTFeed() {
-  if (!_DB||_sovereignFrozen) return;
-  const item=OSINT_SYNTHETIC_FEED[_osintFeedIndex%OSINT_SYNTHETIC_FEED.length];
-  _osintFeedIndex++;
-  if (!_DB.osint_feeds) _DB.osint_feeds=[];
-  _DB.osint_feeds.unshift({...item,parsedAt:_now(),id:_uid()});
-  if (_DB.osint_feeds.length>100) _DB.osint_feeds=_DB.osint_feeds.slice(0,100);
-  const scenWords=(_DB.scenarios||[]).map(s=>s.title.toLowerCase());
-  const matched=item.keywords.filter(kw=>scenWords.some(t=>t.includes(kw)));
-  if (matched.length>=1&&item.severity!=='low') {
-    _triggerFlashAlert(`OSINT FEED MATCH [${item.severity.toUpperCase()}]: "${item.headline}" — Keywords: [${matched.join(', ')}]`);
-    _updateTicker(item.headline,item.severity==='critical'?'hot':'info');
-    if (!_DB.osintKeywordAlerts) _DB.osintKeywordAlerts=[];
-    _DB.osintKeywordAlerts.push({id:_uid(),headline:item.headline,keywords:matched,severity:item.severity,timestamp:_now()});
-    if (_DB.osintKeywordAlerts.length>50) _DB.osintKeywordAlerts=_DB.osintKeywordAlerts.slice(-50);
+// ── OSINT severity classifier ──────────────────────────────────────────────
+function _classifyOSINTSeverity(text) {
+  const t = text.toLowerCase();
+  if (OSINT_ALERT_KEYWORDS.critical.some(k => t.includes(k))) return 'critical';
+  if (OSINT_ALERT_KEYWORDS.high.some(k => t.includes(k)))     return 'high';
+  if (OSINT_ALERT_KEYWORDS.medium.some(k => t.includes(k)))   return 'medium';
+  return 'low';
+}
+
+// ── OSINT keyword extractor ─────────────────────────────────────────────────
+function _extractOSINTKeywords(text) {
+  const allKeywords = Object.values(OSINT_ALERT_KEYWORDS).flat();
+  return allKeywords.filter(k => text.toLowerCase().includes(k));
+}
+
+// ── RSS/JSON parser — handles both rss2json and allorigins raw XML formats ──
+function _parseOSINTResponse(source, responseText) {
+  const items = [];
+  if (source.proxy === 'rss2json') {
+    try {
+      const json = JSON.parse(responseText);
+      if (json.status !== 'ok' || !Array.isArray(json.items)) return items;
+      json.items.slice(0, 8).forEach(entry => {
+        items.push({
+          headline:  (entry.title  || '').trim().slice(0, 160),
+          body:      (entry.description || entry.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 300),
+          url:       entry.link || entry.url || '',
+          author:    entry.author || source.id,
+          ts:        entry.pubDate ? new Date(entry.pubDate).getTime() : _now(),
+          source:    source.id,
+          category:  source.category,
+        });
+      });
+    } catch { /* malformed JSON */ }
+  } else {
+    // allorigins raw — parse XML manually (no DOMParser in workers, but we're on main thread)
+    try {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(responseText, 'text/xml');
+      const nodes  = doc.querySelectorAll('item, entry');
+      nodes.forEach((node, i) => {
+        if (i >= 8) return;
+        const title   = node.querySelector('title')?.textContent?.trim() || '';
+        const desc    = (node.querySelector('description, summary, content')?.textContent || '').replace(/<[^>]+>/g, '').trim();
+        const link    = node.querySelector('link')?.textContent?.trim() || node.querySelector('link')?.getAttribute('href') || '';
+        const pubDate = node.querySelector('pubDate, published, updated')?.textContent || '';
+        items.push({
+          headline:  title.slice(0, 160),
+          body:      desc.slice(0, 300),
+          url:       link,
+          author:    source.id,
+          ts:        pubDate ? new Date(pubDate).getTime() : _now(),
+          source:    source.id,
+          category:  source.category,
+        });
+      });
+    } catch { /* malformed XML */ }
   }
-  if (item.severity==='critical'||item.severity==='high') _applyOSINTCooldown(item.keywords);
-  markDirty();
+  return items;
 }
-function _applyOSINTCooldown(keywords) {
-  const map={cyber:['cyber','scada','apt','critical-infrastructure'],macro:['macro','yield curve','cbdc','fed','energy'],geo:['taiwan','nato','geopolitics','arctic','naval','conflict','escalation'],resident:[]};
-  Object.entries(map).forEach(([id,domains])=>{
-    const a=_DB.agents[id]; if(!a) return;
-    if (keywords.some(kw=>domains.includes(kw))) { a.cooldownUntil=_now()+AGENT_CYCLE_CD; a.status='OSINT alert — re-evaluating (6h)'; }
-  });
+
+// ── Ingest a single OSINT item into DB + trigger alerts ────────────────────
+function _ingestOSINTItem(raw, sourceId) {
+  if (!_DB) return null;
+  const state = (_osintFetchState[sourceId] = _osintFetchState[sourceId] || { lastFetch: 0, itemIds: new Set() });
+
+  // Dedup by headline fingerprint
+  const fp = raw.headline.slice(0, 60).toLowerCase().replace(/\W/g, '');
+  if (state.itemIds.has(fp)) return null;
+  state.itemIds.add(fp);
+  if (state.itemIds.size > 200) {
+    // Prune oldest 100
+    const arr = [...state.itemIds];
+    arr.slice(0, 100).forEach(x => state.itemIds.delete(x));
+  }
+
+  const severity = _classifyOSINTSeverity(raw.headline + ' ' + (raw.body || ''));
+  const keywords = _extractOSINTKeywords(raw.headline + ' ' + (raw.body || ''));
+
+  const item = {
+    id:        _uid(),
+    headline:  raw.headline,
+    body:      raw.body || '',
+    url:       raw.url  || '',
+    author:    raw.author || sourceId,
+    ts:        raw.ts   || _now(),
+    source:    sourceId,
+    category:  raw.category || 'general',
+    severity,
+    keywords,
+    upvotes:   0,
+    parsedAt:  _now(),
+    live:      true,
+  };
+
+  // Unified into _DB.feed (renders via getFeedData → renderFeed)
+  if (!_DB.feed) _DB.feed = [];
+  _DB.feed.unshift(item);
+  if (_DB.feed.length > 200) _DB.feed = _DB.feed.slice(0, 200);
+
+  // Also keep legacy _DB.osint_feeds for compatibility
+  if (!_DB.osint_feeds) _DB.osint_feeds = [];
+  _DB.osint_feeds.unshift({ ...item });
+  if (_DB.osint_feeds.length > 100) _DB.osint_feeds = _DB.osint_feeds.slice(0, 100);
+
+  // Alert on high/critical
+  if (severity === 'critical' || severity === 'high') {
+    _triggerFlashAlert(`OSINT [${severity.toUpperCase()}] — ${item.headline}`);
+    _updateTicker(item.headline, severity === 'critical' ? 'hot' : 'info');
+    if (!_DB.osintKeywordAlerts) _DB.osintKeywordAlerts = [];
+    _DB.osintKeywordAlerts.push({ id: item.id, headline: item.headline, keywords, severity, timestamp: _now() });
+    if (_DB.osintKeywordAlerts.length > 50) _DB.osintKeywordAlerts = _DB.osintKeywordAlerts.slice(-50);
+    _applyOSINTCooldown(keywords);
+  }
+
+  return item;
 }
+
+// ── Live OSINT fetch — one source per call, rotating, rate-limit safe ──────
+async function _fetchAndIngestOSINT() {
+  if (!_DB || _sovereignFrozen) return;
+
+  const source = OSINT_FEED_SOURCES[_osintFetchIndex % OSINT_FEED_SOURCES.length];
+  _osintFetchIndex++;
+
+  const state       = (_osintFetchState[source.id] = _osintFetchState[source.id] || { lastFetch: 0, itemIds: new Set() });
+  const MIN_INTERVAL = 5 * 60_000; // min 5 min between fetches of same source
+  if (_now() - state.lastFetch < MIN_INTERVAL) return;
+
+  // Circuit breaker — skip if external circuit is open
+  if (_Resilience && !_Resilience.cbCanRequest('osint_' + source.category)) return;
+
+  let proxyURL;
+  if (source.proxy === 'rss2json') {
+    proxyURL = OSINT_PROXIES.rss2json + encodeURIComponent(source.url);
+  } else {
+    proxyURL = OSINT_PROXIES.allorigins + encodeURIComponent(source.url);
+  }
+
+  try {
+    const res = await fetch(proxyURL, {
+      method:  'GET',
+      headers: { 'Accept': 'application/json, text/xml, */*' },
+      signal:  AbortSignal.timeout(12_000),
+    });
+
+    if (!res.ok) {
+      if (_Resilience) _Resilience.cbRecordFailure('osint_' + source.category);
+      return;
+    }
+
+    state.lastFetch = _now();
+    const text      = await res.text();
+    const rawItems  = _parseOSINTResponse(source, text);
+
+    let ingested = 0;
+    rawItems.forEach(raw => {
+      const item = _ingestOSINTItem(raw, source.id);
+      if (!item) return;
+      ingested++;
+
+      // Push semantic signal to data_synthesis pipeline
+      if (window._mirDS?.onOSINTSignal) {
+        window._mirDS.onOSINTSignal(item);
+      }
+
+      // Broadcast to mesh peers
+      if (_Mesh?.broadcastDelta) {
+        _Mesh.broadcastDelta({
+          type:     'feed_item',
+          item:     {
+            id: item.id, headline: item.headline, body: item.body,
+            url: item.url, source: item.source, category: item.category,
+            severity: item.severity, keywords: item.keywords, ts: item.ts,
+          },
+        });
+      }
+    });
+
+    if (ingested > 0) {
+      markDirty();
+      if (window.renderFeed) window.renderFeed();
+      if (_Resilience) _Resilience.cbRecordSuccess('osint_' + source.category);
+      _adminLog(`OSINT ingested ${ingested} items from ${source.id}`, 'info');
+    }
+  } catch (err) {
+    if (_Resilience) _Resilience.cbRecordFailure('osint_' + source.category);
+    // Silent fail — OSINT is best-effort
+  }
+}
+
+// ── Flash alert orchestrator (keyword match across live DB) ────────────────
 function _checkForFlashAlerts() {
-  if (!_DB||_sovereignFrozen) return;
-  _parseOSINTFeed();
-  const words=(_DB.scenarios||[]).flatMap(s=>s.title.toLowerCase().split(/\W+/));
-  const hot=['taiwan','ukraine','cyber','nuclear','missile','attack','crisis','escalation'];
-  const hits=hot.filter(k=>words.includes(k));
-  if (hits.length>0&&Math.random()>0.93) _triggerFlashAlert(`OSINT MATCH: Keywords [${hits.slice(0,3).join(', ')}] in live intelligence feeds`);
+  if (!_DB || _sovereignFrozen) return;
+
+  // Async fetch: rotates through sources, rate-limited per source
+  _fetchAndIngestOSINT().catch(() => {});
+
+  // Cross-reference new OSINT against active scenario titles
+  const scenWords = (_DB.scenarios || []).flatMap(s =>
+    s.title.toLowerCase().split(/\W+/).filter(w => w.length > 3)
+  );
+  const recentFeed = (_DB.feed || []).slice(0, 20);
+
+  recentFeed.forEach(item => {
+    if (_now() - item.ts > 3_600_000) return; // only items < 1 hour old
+    if (item._alertFired) return;
+    const matched = (item.keywords || []).filter(kw => scenWords.includes(kw));
+    if (matched.length >= 2 || item.severity === 'critical') {
+      _triggerFlashAlert(
+        `SCENARIO MATCH [${item.severity?.toUpperCase() || 'INFO'}]: "${item.headline}" — Keywords: [${matched.slice(0,4).join(', ')}]`
+      );
+      item._alertFired = true;
+    }
+  });
 }
 function _triggerFlashAlert(message) {
   if (!_DB) return;
@@ -1795,7 +2040,23 @@ export function toast(msg, type = 'info', duration = 3000) {
 }
 
 // ── Data accessors (called by index.html renderers via window._MIR_DB) ────
-export function getFeedData()        { return _DB?.feed        || []; }
+export function getFeedData() {
+  if (!_DB) return [];
+  // Merge user-submitted intel (_DB.feed) with live OSINT (_DB.osint_feeds)
+  // Deduplicated by id, sorted newest-first
+  const feed  = Array.isArray(_DB.feed)        ? _DB.feed        : [];
+  const osint = Array.isArray(_DB.osint_feeds)  ? _DB.osint_feeds : [];
+  const seen  = new Set();
+  const merged = [];
+  [...feed, ...osint].forEach(item => {
+    const key = item.id || item.headline?.slice(0, 40);
+    if (key && seen.has(key)) return;
+    if (key) seen.add(key);
+    merged.push(item);
+  });
+  merged.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return merged.slice(0, 200);
+}
 export function getScenariosData()   { return _DB?.scenarios   || []; }
 export function getPredictionsData() { return _DB?.predictions || []; }
 export function getOTCData()         { return _DB?.otc_orders  || []; }
@@ -2009,6 +2270,31 @@ function _bridgeGlobals() {
   window.getSTMData           = getSTMData;
   window.applyFRS             = applyFRS;
   window.getFRSWeight         = getFRSWeight;
+
+  // ── Peer OSINT alert listener (injected items from mesh peers) ───────────
+  window.addEventListener('mir:peer_osint_alert', (e) => {
+    const msg = e.detail;
+    if (!msg?.headline || !_DB) return;
+    const item = _ingestOSINTItem({
+      headline: msg.headline,
+      body:     msg.body || '',
+      url:      msg.url  || '',
+      author:   msg.author || msg.peerId || 'peer',
+      ts:       msg.ts   || _now(),
+      category: msg.category || 'geopolitical',
+    }, msg.source || 'peer');
+    if (item && window.renderFeed) {
+      requestAnimationFrame(() => window.renderFeed());
+    }
+  });
+
+  // ── Peer feed_item listener (live OSINT from mesh) ───────────────────────
+  window.addEventListener('mir:peer_feed_item', (e) => {
+    const { item } = e.detail || {};
+    if (!item?.headline || !_DB) return;
+    _ingestOSINTItem(item, item.source || 'peer');
+    if (window.renderFeed) requestAnimationFrame(() => window.renderFeed());
+  });
 
   // Inline event helpers used by dynamically-generated HTML
   window._mirUpvote       = (id)        => upvoteItem(id);
@@ -2226,7 +2512,10 @@ export async function initApplication({ db: idbHandle, snap, KDF, Mesh, CRDT, Me
   _initBehaviorTracking();
 
   _timers.agentTick  = setInterval(_tickAgentActivity,  25_000 + Math.floor(Math.random() * 15_000));
-  _timers.osintParse = setInterval(_checkForFlashAlerts, 55_000 + Math.floor(Math.random() * 30_000));
+  // OSINT: rotate sources every 3–5 min (rate-limit friendly)
+  _timers.osintParse = setInterval(_checkForFlashAlerts, 180_000 + Math.floor(Math.random() * 120_000));
+  // Prime the first fetch after 15s (allow DB to load)
+  setTimeout(_checkForFlashAlerts, 15_000);
   _timers.autoSave   = setInterval(() => {
     flushDB(); _renderNavbar(); _updateSidebarStats();
   }, 12_000);
