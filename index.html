@@ -3390,7 +3390,18 @@ document.addEventListener('keydown', (e) => {
     <!-- Header -->
     <div class="mir-help-header">
       <div class="mir-help-title">SOVEREIGN HELP CENTRE</div>
-      <button class="mir-help-close" id="mir-help-close" aria-label="Close help">✕</button>
+      <div style="display:flex;align-items:center;gap:0.4rem">
+        <button id="mir-help-pdf-btn"
+                onclick="window._mirHelpPDF && window._mirHelpPDF()"
+                style="background:rgba(0,255,136,0.08);border:1px solid #00aa44;color:#00ff88;
+                       font-family:var(--font-hud),monospace;font-size:0.55rem;font-weight:700;
+                       padding:0.25rem 0.5rem;border-radius:2px;cursor:pointer;
+                       letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap"
+                title="Export full manual as bilingual PDF">
+          ⬇ PDF
+        </button>
+        <button class="mir-help-close" id="mir-help-close" aria-label="Close help">✕</button>
+      </div>
     </div>
 
     <!-- Language selector -->
@@ -3413,6 +3424,10 @@ document.addEventListener('keydown', (e) => {
       <button class="mir-help-tab"        data-cat="support">Support</button>
       <button class="mir-help-tab"        data-cat="private_key_security" style="border-color:#440000;color:#440000">🔑 Key Safety</button>
       <button class="mir-help-tab"        data-cat="public_key_identity">Identity</button>
+      <button class="mir-help-tab"        data-cat="module_registry"      style="border-color:#1a1a4a;color:#4488ff">📦 Modules</button>
+      <button class="mir-help-tab"        data-cat="operational_controls" style="border-color:#1a3a1a;color:#00cc00">⚙ Controls</button>
+      <button class="mir-help-tab"        data-cat="user_workflows"       style="border-color:#2a2a00;color:#aaaa00">📋 Workflows</button>
+      <button class="mir-help-tab"        data-cat="glossary"             style="border-color:#2a1a2a;color:#aa66ff">📖 Glossary</button>
     </div>
 
     <!-- Content -->
@@ -3774,6 +3789,152 @@ window.injectHelpHUD = (function () {
     /* Expose API */
     window._mirHelpHUD = { open: _open, close: _close, ask: _ask };
     console.log('[HELP] HUD injected, lang:', _lang);
+
+    // ── Language persist ──────────────────────────────────────────────────
+    try {
+      const saved = localStorage.getItem('mir_help_lang');
+      if (saved && ['en','fa','ar','zh','de'].includes(saved)) {
+        _lang = saved;
+        _switchLang(saved);
+      }
+    } catch {}
+
+    // ── PDF EXPORT ENGINE ─────────────────────────────────────────────────
+    async function _exportManualPDF() {
+      const btn = document.getElementById('mir-help-pdf-btn');
+      if (btn) { btn.textContent = '⏳...'; btn.disabled = true; }
+      try {
+        const hd = _helpData || await _loadHelpData();
+        if (!hd) throw new Error('Help data not loaded');
+        let jsPDFAvail = typeof window.jspdf !== 'undefined';
+        if (!jsPDFAvail) {
+          await new Promise((res, rej) => {
+            const s  = document.createElement('script');
+            s.src    = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+          });
+          jsPDFAvail = typeof window.jspdf !== 'undefined';
+        }
+        if (jsPDFAvail) { _buildJsPDF(hd); }
+        else             { _buildPrintHTML(hd); }
+      } catch (e) {
+        console.warn('[HELP PDF]', e.message);
+        _buildPrintHTML(_helpData || {});
+      } finally {
+        if (btn) { btn.textContent = '⬇ PDF'; btn.disabled = false; }
+      }
+    }
+
+    function _buildJsPDF(hd) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const PW = 210, PH = 297, ML = 18, MR = 18, CW = 210 - 36;
+      let y = 18;
+
+      const chk = (n = 10) => { if (y + n > PH - 18) { doc.addPage(); hdr(); } };
+      const hdr = () => {
+        doc.setFillColor(3,7,18); doc.rect(0,0,PW,12,'F');
+        doc.setFontSize(7); doc.setFont('helvetica','bold');
+        doc.setTextColor(0,220,100);
+        doc.text('MIR PLATFORM v2.0  — SOVEREIGN USER MANUAL', ML, 8);
+        y = 20;
+      };
+      const txt = (t, x, fs, style, col, mw) => {
+        doc.setFontSize(fs); doc.setFont('helvetica', style||'normal');
+        doc.setTextColor(...(col||[30,30,30]));
+        const lines = doc.splitTextToSize(String(t||''), mw||CW);
+        lines.forEach(l => { chk(fs*0.42+1); doc.text(l, x, y); y += fs*0.42+1.4; });
+      };
+
+      // Cover
+      doc.setFillColor(3,7,18); doc.rect(0,0,PW,PH,'F');
+      doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(0,255,100);
+      doc.text('MIR PLATFORM', PW/2, 80, {align:'center'});
+      doc.setFontSize(12); doc.setTextColor(0,180,90);
+      doc.text('User Operation Manual  |  راهنمای عملیاتی', PW/2, 96, {align:'center'});
+      doc.setFontSize(9); doc.setTextColor(60,90,120);
+      doc.text('Bilingual EN/FA  ·  ' + new Date().toISOString().slice(0,10), PW/2, 110, {align:'center'});
+      doc.setFontSize(7.5); doc.setTextColor(30,60,50);
+      ['Module Registry  ·  Operational Controls  ·  Workflows  ·  Glossary',
+       'Protocol Fundamentals  ·  Sovereign Override  ·  OTC Escrow  ·  PoUW Mining',
+       'Strategic Forecasting  ·  Social Interaction  ·  Key Security',
+      ].forEach((l,i) => doc.text(l, PW/2, 130+i*8, {align:'center'}));
+
+      const CATS = [
+        'module_registry','operational_controls','user_workflows','glossary',
+        'protocol_fundamentals','sovereign_override','otc_escrow','pouw_mining',
+        'strategic_forecasting','social_interaction','private_key_security',
+      ];
+      const LANGS = [['en','English'],['fa','فارسی']];
+
+      CATS.forEach(catKey => {
+        LANGS.forEach(([lg, lbl]) => {
+          const sec = hd[catKey]?.[lg] || hd[catKey]?.en;
+          if (!sec) return;
+          doc.addPage(); hdr();
+          // Chapter bar
+          doc.setFillColor(0,25,5); doc.rect(ML-2, y-4, CW+4, 10, 'F');
+          txt(`${sec.title}  [${lbl}]`, ML, 11, 'bold', [0,240,100]);
+          y += 2;
+          if (sec.WARNING) {
+            doc.setFillColor(35,0,0); doc.rect(ML, y, CW, 2, 'F'); y += 3;
+            txt('⚠ ' + sec.WARNING, ML, 7.5, 'bold', [190,40,40], CW);
+            y += 3;
+          }
+          if (sec.summary) { txt(sec.summary, ML, 8.5, 'italic', [80,110,150]); y += 2; }
+          (sec.modules||[]).forEach(m => {
+            chk(16);
+            doc.setFillColor(4,18,8); doc.rect(ML, y-3, CW, 7,'F');
+            txt(m.heading, ML+1, 9, 'bold', [0,190,110]);
+            y += 1;
+            txt(m.body, ML+2, 8, 'normal', [50,70,90], CW-4);
+            if (m.tags?.length) { txt('Tags: '+m.tags.join(', ')+'  |  '+(m.difficulty||''), ML+2, 7, 'italic', [40,60,80]); }
+            y += 3;
+          });
+        });
+      });
+
+      // Page numbers
+      const total = doc.getNumberOfPages();
+      for (let p = 2; p <= total; p++) {
+        doc.setPage(p);
+        doc.setFontSize(6.5); doc.setTextColor(40,60,80);
+        doc.text(`${p-1} / ${total-1}`, PW-MR, PH-8, {align:'right'});
+        doc.text('MIR Sovereign Intelligence Network', ML, PH-8);
+      }
+      doc.save('MIR_Platform_Manual_' + new Date().toISOString().slice(0,10) + '.pdf');
+    }
+
+    function _buildPrintHTML(hd) {
+      const cats = ['module_registry','operational_controls','user_workflows','glossary',
+                    'protocol_fundamentals','sovereign_override','otc_escrow','pouw_mining'];
+      let b = '';
+      cats.forEach(c => {
+        [['en','English'],['fa','فارسی']].forEach(([l,ll]) => {
+          const s = hd[c]?.[l]||hd[c]?.en; if(!s) return;
+          b += `<h2 style="color:#060;page-break-before:always">${s.title} [${ll}]</h2>`;
+          if (s.WARNING) b += `<div style="background:#fee;border:1px solid red;padding:8px;font-size:11px"><b>⚠ ${s.WARNING}</b></div>`;
+          if (s.summary) b += `<p style="color:#666;font-style:italic;font-size:12px">${s.summary}</p>`;
+          (s.modules||[]).forEach(m => {
+            b += `<h3 style="color:#040;font-size:13px">${m.heading}</h3>`;
+            b += `<pre style="white-space:pre-wrap;font-size:10px;background:#f5f5f5;padding:8px;border-radius:4px;border:1px solid #ddd">${m.body}</pre>`;
+            if (m.tags?.length) b += `<p style="font-size:9px;color:#aaa">Tags: ${m.tags.join(', ')}</p>`;
+          });
+        });
+      });
+      const w = window.open('','_blank');
+      if (!w) return;
+      w.document.write(`<!DOCTYPE html><html><head><title>MIR Manual</title>
+        <meta charset="utf-8">
+        <style>body{font-family:sans-serif;max-width:900px;margin:0 auto;padding:20px}
+        @media print{h2{page-break-before:always}pre{page-break-inside:avoid}}</style>
+        </head><body>
+        <h1>MIR Platform v2.0 — User Manual<br><small style="font-size:13px;color:#888">Bilingual EN/FA · ${new Date().toLocaleDateString()}</small></h1>
+        ${b}<script>window.print();<\/script></body></html>`);
+    }
+
+    window._mirHelpPDF = _exportManualPDF;
   };
 })();
 </script>

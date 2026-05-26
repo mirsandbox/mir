@@ -770,5 +770,442 @@ export const HELP_DATA = {
       ],
     },
   },
+,
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CHAPTER 1: MODULE REGISTRY
+  // ═══════════════════════════════════════════════════════════════════════
+  module_registry: {
+    en: {
+      title: 'Module Registry',
+      summary: 'Technical breakdown of the four core MIR subsystems.',
+      modules: [
+        {
+          id: 'mr-001',
+          heading: 'identity_kdf.js — Sovereign Identity Layer',
+          body: 'Implements ED25519 keypair generation via WebCrypto API. Provides: generateIdentity() for in-browser key creation, saveKeyLocally() for localStorage persistence, exportEncryptedBackup() using AES-256-GCM + PBKDF2 (150k iterations) → encrypted .json download. Web3 bridge: connectEthWallet(), linkEthToSovereign() for EIP-1193 Ethereum address binding. All cryptographic operations run inside SubtleCrypto — no keys are transmitted. Identity Partition: each ED25519 pubKey is an isolated IDB namespace.',
+          tags: ['identity','ed25519','aes-gcm','pbkdf2','web3'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-002',
+          heading: 'mesh_network.js — P2P Mesh Layer',
+          body: 'WebRTC-based peer network using 3-tier signaling: BroadcastChannel (same-device) → localStorage relay → GitHub Gist fallback. Peer message types: handshake, crdt_sync, osint_alert, feed_item, sovereign_override, block_found, heartbeat. PoUW mining engine: 33-year/11-epoch SHA-256 Blob Worker. Sybil defence: exponential difficulty on anomalous peer volume. Mobile cap: 3–5 second CPU cycles. broadcastDelta(payload) is the public broadcast API used by all subsystems.',
+          tags: ['webrtc','p2p','mining','pouw','sybil'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-003',
+          heading: 'data_synthesis.js — GPU Orchestration Bridge',
+          body: 'Receives Evolutionary State Deltas (ESDs) from ai_evolution.js and Peer State Vectors (PSVs) from mesh peers. Trust weights: local=1.0, peer=0.3, sovereign=2.0. Batches signals every 2s, maps to Float32 row-major GPU buffers, dispatches 4 WebGPU compute passes: gpuTuneSemanticWeights, gpuComputeWeightedProbs, gpuUpdateAffinityMatrix, gpuBatchScenarioScore. Falls back to CPU EMA if WebGPU unavailable. onOSINTSignal() converts live news severity into 6D semantic pushes.',
+          tags: ['gpu','webgpu','float32','ema','signal'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-004',
+          heading: 'OSINT Engine — Live Feed Ingestion',
+          body: 'Fetches from 7 real RSS/JSON sources (Reuters, AP, BBC, FT, ECB, Krebs Security, The Register) via CORS-safe proxies: rss2json API (JSON) and allorigins.win (raw XML/Atom). Rotation: one source per 3–5 min cycle. Per-source dedup via headline fingerprint (200 item cache). Severity classification: critical/high/medium/low via keyword matching. Items flow to _DB.feed + _DB.osint_feeds → getFeedData() merges both. New items broadcast as feed_item peer messages and trigger 6D semantic weight updates via data_synthesis.onOSINTSignal().',
+          tags: ['osint','rss','cors','severity','broadcast'],
+          difficulty: 'intermediate',
+        },
+      ],
+    },
+    fa: {
+      title: 'رجیستری ماژول‌ها',
+      summary: 'تفصیل فنی چهار زیرسیستم اصلی MIR.',
+      modules: [
+        {
+          id: 'mr-001',
+          heading: 'identity_kdf.js — لایه هویت حاکمیتی',
+          body: 'جفت کلید ED25519 را از طریق WebCrypto API در مرورگر تولید می‌کند. generateIdentity() برای ایجاد کلید محلی، saveKeyLocally() برای ذخیره در localStorage، exportEncryptedBackup() با AES-256-GCM + PBKDF2 برای دانلود فایل .json رمزگذاری‌شده. هیچ کلیدی از مرورگر خارج نمی‌شود. پارتیشن هویت: هر کلید عمومی ED25519 یک فضای IDB ایزوله است.',
+          tags: ['identity','ed25519','aes-gcm','web3'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-002',
+          heading: 'mesh_network.js — لایه مش P2P',
+          body: 'شبکه همتا مبتنی بر WebRTC با سیگنال‌دهی سه‌لایه‌ای. انواع پیام همتا: handshake، crdt_sync، osint_alert، feed_item، sovereign_override، block_found. موتور استخراج PoUW: ۳۳ سال / ۱۱ دوره SHA-256. دفاع Sybil: سختی نمایی در حجم انتقال غیرعادی. محدودیت موبایل: چرخه‌های CPU ۳–۵ ثانیه.',
+          tags: ['webrtc','p2p','mining','pouw'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-003',
+          heading: 'data_synthesis.js — پل ارکستراسیون GPU',
+          body: 'دلتاهای حالت تکاملی از ai_evolution.js و بردارهای حالت همتا دریافت می‌کند. وزن‌های اعتماد: محلی=۱.۰، همتا=۰.۳، حاکمیتی=۲.۰. هر ۲ ثانیه سیگنال‌ها را دسته‌بندی کرده و ۴ پاس محاسبه WebGPU اجرا می‌کند. در صورت عدم وجود WebGPU به CPU EMA برمی‌گردد.',
+          tags: ['gpu','webgpu','signal'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'mr-004',
+          heading: 'موتور OSINT — دریافت خوراک زنده',
+          body: 'از ۷ منبع RSS/JSON واقعی از طریق پروکسی‌های CORS-safe دریافت می‌کند. هر ۳–۵ دقیقه یک منبع. طبقه‌بندی شدت: critical/high/medium/low. آیتم‌ها به _DB.feed و _DB.osint_feeds می‌روند. آیتم‌های جدید به عنوان پیام‌های feed_item پخش می‌شوند.',
+          tags: ['osint','rss','cors','severity'],
+          difficulty: 'intermediate',
+        },
+      ],
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CHAPTER 2: OPERATIONAL CONTROLS
+  // ═══════════════════════════════════════════════════════════════════════
+  operational_controls: {
+    en: {
+      title: 'Operational Controls Index',
+      summary: 'Complete numbered index of all UI controls, their functions, and technical outcomes.',
+      modules: [
+        {
+          id: 'oc-001',
+          heading: '1. CONNECT / AUTHENTICATE button (nav-right)',
+          body: 'Function: Opens Auth Modal for login or registration.\nUser expectation: Enter username + paste/generate keypair to activate your node.\nTechnical outcome: doLogin() verifies ED25519 privKey matches stored pubKey → sets window._MIR_SES → enables all authenticated features. New users: generateKeypair() → saveKeyLocally() → +10 MIR welcome bonus credited.',
+          tags: ['auth','login','register','keypair'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-002',
+          heading: '2. ⬡ MINE toggle button (nav-right)',
+          body: 'Function: Starts/stops PoUW mining engine.\nUser expectation: Click once to start, click again to stop. Mining indicator turns green.\nTechnical outcome: toggleMining() → spawns SHA-256 Blob Worker → validates CRDT deltas → rewards credited to your pubKey address. Auto-pauses on tab hide. Mobile: max 5s CPU per cycle.',
+          tags: ['mining','pouw','worker','battery'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-003',
+          heading: '3. ⬡ SOVEREIGN button (nav-right)',
+          body: 'Function: Opens Admin Terminal (Ctrl+Shift+A alternative).\nUser expectation: Type commands to manage platform state.\nTechnical outcome: Requires Admin ED25519 pubKey match. Commands: apikey, override, freeze/unfreeze, mint, burn, dream, githubsync, reset CONFIRM. All commands cryptographically gated via isAdminPubKey().',
+          tags: ['admin','terminal','sovereign','commands'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'oc-004',
+          heading: '4. SUBMIT INTEL button (Feed view)',
+          body: 'Function: Post intelligence item to the live feed.\nUser expectation: Fill headline + analysis + tags → item appears in feed immediately.\nTechnical outcome: submitIntel() → item pushed to _DB.feed → renderFeed() called → item broadcast to peers via broadcastDelta({type:"feed_item"}) → upvote costs 1 MIR (2% burn, 98% to creator).',
+          tags: ['intel','feed','submit','upvote'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-005',
+          heading: '5. OSINT Feed section (Feed view, live items)',
+          body: 'Function: Displays live geopolitical/macroeconomic news ingested from 7 real sources.\nUser expectation: Items update every 3–5 minutes. Severity badges: CRITICAL (red), HIGH (amber), MEDIUM (cyan). ↗ Source link opens original article.\nTechnical outcome: _fetchAndIngestOSINT() rotates sources → _parseOSINTResponse() parses RSS/JSON → _ingestOSINTItem() deduplicates → getFeedData() merges with user intel → renderFeed() displays unified view.',
+          tags: ['osint','feed','news','severity'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-006',
+          heading: '6. Scenarios view (+ NEW SCENARIO)',
+          body: 'Function: Create and manage probability scenarios.\nUser expectation: Set title, description, probability (1–99%), and horizon (days).\nTechnical outcome: createScenario() → stored in _DB.scenarios → 3 AI agents weight-vote using 6D semantic matrices → consensusProb computed via GPU → probability bar updates live via mir:synthesis_complete event.',
+          tags: ['scenarios','probability','ai','gpu'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-007',
+          heading: '7. Mining Dashboard (Mining view)',
+          body: 'Function: View mining metrics and control mining.\nUser expectation: See current epoch, hashrate, block rewards, nonce counter.\nTechnical outcome: getMiningData() reads _DB.miningState. Epoch schedule: Epoch 1 (2025–2028) = 0.5 MIR/block, halving every 3 years. Mining view accessible via left sidebar nav item "Mining".',
+          tags: ['mining','epoch','hashrate','rewards'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-008',
+          heading: '8. OTC Market (Market view)',
+          body: 'Function: Peer-to-peer MIR trading with cryptographic escrow.\nUser expectation: Click SELL MIR or BUY MIR → enter amount and price → confirm with keypair signature.\nTechnical outcome: createSellOrder() locks MIR in escrow → order appears in otc-sell-orders list → buyer confirms payment → escrow releases. 0% fee peer-direct, 10% fee for AI-facilitated orders → Network Rewards Pool. Market view accessible via sidebar nav item "Market".',
+          tags: ['otc','escrow','trading','market'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-009',
+          heading: '9. Ledger view (Transactions tab)',
+          body: 'Function: View full transaction history.\nUser expectation: Chronological list of all MIR movements: mining rewards, upvotes given/received, OTC trades.\nTechnical outcome: getTxData() returns _DB.transactions array → renderLedger() displays newest-first. Accessible via sidebar "Ledger" nav item.',
+          tags: ['ledger','transactions','history'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-010',
+          heading: '10. Cognitive / Agents view',
+          body: 'Function: Visualise AI agent semantic weights and affinity matrix.\nUser expectation: See 6D radar charts, bar charts, and heatmap updating in real time.\nTechnical outcome: analytics_charts.js renders Canvas 2D charts from _DB.agents[id].semanticWeights. Updates fire on mir:synthesis_complete event from data_synthesis.js GPU pipeline. Dream State button consolidates agent memory.',
+          tags: ['agents','charts','radar','affinity','gpu'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'oc-011',
+          heading: '11. ? Help button + API Console (FAB buttons)',
+          body: 'Function: (?) opens Help HUD. (API) opens Interactive API Console.\nUser expectation: (?) → searchable knowledge base. (API) → live testing of _mirMeta, _mirMesh, _mirCRDT global objects.\nTechnical outcome: Help: lazy-loads help_content.js + support_agent.js. API Console: api_console.js provides CSP-safe method invocation UI with live response display.',
+          tags: ['help','api','console','support'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-012',
+          heading: '12. Language Selector ([EN | FA | AR | ZH | DE])',
+          body: 'Function: Switch UI language in Help HUD.\nUser expectation: Click language code → all help content updates instantly.\nTechnical outcome: _switchLang(lang) updates _lang state → re-renders current category in selected language → adjusts panel dir (RTL for FA/AR). PDF export uses selected language.',
+          tags: ['language','localisation','rtl'],
+          difficulty: 'beginner',
+        },
+      ],
+    },
+    fa: {
+      title: 'فهرست کنترل‌های عملیاتی',
+      summary: 'فهرست شماره‌دار کامل همه کنترل‌های UI، عملکرد و نتایج فنی.',
+      modules: [
+        {
+          id: 'oc-001',
+          heading: '۱. دکمه CONNECT / AUTHENTICATE (نوار ناوبری)',
+          body: 'عملکرد: باز کردن Auth Modal برای ورود یا ثبت‌نام.\nانتظار کاربر: نام کاربری وارد کرده و جفت کلید را وارد/تولید کنید.\nنتیجه فنی: doLogin() کلید خصوصی را با pubKey ذخیره‌شده تأیید می‌کند ← _MIR_SES تنظیم می‌شود. کاربران جدید: +10 MIR پاداش خوش‌آمدگویی.',
+          tags: ['auth','login','register'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-002',
+          heading: '۲. دکمه ⬡ MINE (نوار ناوبری)',
+          body: 'عملکرد: شروع/توقف موتور استخراج PoUW.\nنتیجه فنی: Blob Worker SHA-256 ← دلتاهای CRDT تأیید می‌شوند ← پاداش‌ها به آدرس pubKey شما واریز می‌شود. در موبایل حداکثر ۵ ثانیه CPU.',
+          tags: ['mining','pouw'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-003',
+          heading: '۳. دکمه ⬡ SOVEREIGN (نوار ناوبری)',
+          body: 'عملکرد: باز کردن ترمینال ادمین.\nنتیجه فنی: نیاز به تطابق کلید عمومی ادمین. دستورات: apikey، override، freeze/unfreeze، mint، burn، dream، githubsync.',
+          tags: ['admin','terminal'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'oc-004',
+          heading: '۴. دکمه SUBMIT INTEL (نمای خوراک)',
+          body: 'عملکرد: ارسال آیتم اطلاعاتی به خوراک زنده.\nنتیجه فنی: آیتم به _DB.feed اضافه می‌شود ← renderFeed() فراخوانی می‌شود ← از طریق broadcastDelta به همتایان پخش می‌شود. رأی مثبت: ۱ MIR (۲٪ سوخته، ۹۸٪ به سازنده).',
+          tags: ['intel','feed','submit'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-005',
+          heading: '۵. بخش خوراک OSINT (نمای خوراک)',
+          body: 'عملکرد: نمایش اخبار ژئوپلیتیکی/اقتصاد کلان زنده از ۷ منبع واقعی.\nانتظار کاربر: هر ۳–۵ دقیقه به‌روز می‌شود. نشان‌های شدت: CRITICAL (قرمز)، HIGH (کهربایی)، MEDIUM (فیروزه‌ای).',
+          tags: ['osint','feed','news'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-006',
+          heading: '۶. نمای سناریوها (+ NEW SCENARIO)',
+          body: 'عملکرد: ایجاد و مدیریت سناریوهای احتمالی.\nنتیجه فنی: ۳ عامل AI با ماتریس‌های وزنی ۶ بعدی رأی می‌دهند ← consensusProb از طریق GPU محاسبه می‌شود.',
+          tags: ['scenarios','probability','ai'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-007',
+          heading: '۷. داشبورد استخراج (نمای Mining)',
+          body: 'عملکرد: مشاهده معیارهای استخراج. برنامه دوره: دوره ۱ (۲۰۲۵–۲۰۲۸) = ۰.۵ MIR/بلوک، هر ۳ سال نصف می‌شود. از طریق آیتم ناوبری "Mining" در نوار کناری.',
+          tags: ['mining','epoch'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-008',
+          heading: '۸. بازار OTC (نمای Market)',
+          body: 'عملکرد: معاملات MIR همتا به همتا با امانت رمزنگاری. SELL MIR یا BUY MIR ← مقدار و قیمت وارد کنید. کارمزد مستقیم ۰٪، کارمزد AI ۱۰٪. از طریق آیتم ناوبری "Market" در نوار کناری.',
+          tags: ['otc','escrow','trading'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'oc-009',
+          heading: '۹. نمای دفتر کل (Ledger)',
+          body: 'عملکرد: مشاهده تاریخچه کامل تراکنش‌ها. از طریق آیتم ناوبری "Ledger" در نوار کناری.',
+          tags: ['ledger','transactions'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-010',
+          heading: '۱۰. نمای شناختی / عوامل',
+          body: 'عملکرد: تجسم وزن‌های معنایی عامل AI و ماتریس تمایل. نمودارهای رادار ۶ بعدی از analytics_charts.js. با رویداد mir:synthesis_complete به‌روز می‌شود.',
+          tags: ['agents','charts','radar'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'oc-011',
+          heading: '۱۱. دکمه‌های ? Help و API Console',
+          body: 'عملکرد: (?) پایگاه دانش قابل جستجو. (API) آزمون زنده اشیاء جهانی _mirMeta، _mirMesh، _mirCRDT.',
+          tags: ['help','api','console'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'oc-012',
+          heading: '۱۲. انتخابگر زبان [EN | FA | AR | ZH | DE]',
+          body: 'عملکرد: تغییر زبان HUD کمک. محتوای کمک فوراً به‌روز می‌شود. RTL برای FA/AR تنظیم می‌شود.',
+          tags: ['language','rtl'],
+          difficulty: 'beginner',
+        },
+      ],
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CHAPTER 3: USER WORKFLOWS
+  // ═══════════════════════════════════════════════════════════════════════
+  user_workflows: {
+    en: {
+      title: 'User Workflows',
+      summary: 'Step-by-step guides for core platform operations.',
+      modules: [
+        {
+          id: 'wf-001',
+          heading: 'Workflow A: News Analysis (OSINT Ingestion)',
+          body: 'Step 1: Ensure you are connected (AUTHENTICATE). Live OSINT feeds begin 15 seconds after boot.\nStep 2: Navigate to Feed view (left sidebar ▸ Feed).\nStep 3: Items marked with source badges (reuters_world, krebs_security, etc.) are live OSINT. Items without badges are peer-submitted intel.\nStep 4: Click "↗ Source" on any OSINT item to open the original article.\nStep 5: Severity CRITICAL/HIGH items trigger Flash Alerts in the top strip and update the ticker.\nStep 6: OSINT keywords matching your active scenarios trigger automatic Scenario Flash Alerts.\nStep 7: To deepen analysis — open Scenarios view, create a new scenario with the news headline as the title. AI agents will immediately begin computing consensus probability using live 6D semantic weights.\nStep 8: Check Cognitive view to see how the news updated the agents\' geo/macro/cyber weight dimensions.',
+          tags: ['osint','news','analysis','workflow'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'wf-002',
+          heading: 'Workflow B: Data Visualisation (6D Signal Graph)',
+          body: 'Step 1: Navigate to Cognitive / Agents view (left sidebar ▸ Agents or Cognitive).\nStep 2: Each of the 4 AI agents (Resident, Macro, Cyber, Geo) shows: a) 6D Radar chart showing current semantic weights, b) Bar chart showing all 6 dimension values, c) Affinity heatmap showing inter-agent relationships.\nStep 3: Dimensions: [0] Geopolitical, [1] Economic, [2] Cyber, [3] Historical, [4] Credibility, [5] Urgency.\nStep 4: Charts update automatically every 2 seconds via the GPU synthesis pipeline (mir:synthesis_complete event).\nStep 5: To manually trigger an update — run "dream" in the Sovereign Terminal. Dream State consolidates STM → optimises weight matrices → commits to CRDT ledger.\nStep 6: To view raw weight numbers — open API Console (purple FAB) ▸ _mirMeta ▸ getAgentWeights ▸ select agent ▸ EXECUTE.',
+          tags: ['visualisation','charts','6d','agents','gpu'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'wf-003',
+          heading: 'Workflow C: Collaboration (Intel + CRDT Mesh)',
+          body: 'Step 1: Navigate to Feed view.\nStep 2: Click SUBMIT INTEL → fill Headline (required), Analysis (recommended), Tags (comma-separated).\nStep 3: Click SUBMIT. Your item enters _DB.feed immediately and is broadcast to all connected peers via mesh broadcastDelta.\nStep 4: Other users see your item within seconds (WebRTC peer delivery). If no peers, item persists locally and syncs on next peer connection.\nStep 5: To upvote quality intel — click ▲ Upvote (costs 1 MIR: 0.02 burned, 0.98 to author). Your FRS weight scales upvote influence: FRS 76–100 = ×2.0 weight.\nStep 6: CRDT ensures all peers converge to identical feed state without conflicts via LWW-Register merge.\nStep 7: Check Leaderboard (sidebar) to see top FRS-ranked contributors.',
+          tags: ['collaboration','intel','crdt','mesh','upvote'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'wf-004',
+          heading: 'Workflow D: Mining Setup',
+          body: 'Step 1: Connect your sovereign identity (AUTHENTICATE).\nStep 2: Navigate to Mining Dashboard (left sidebar ▸ Mining).\nStep 3: View current epoch, estimated next halving, and your accumulated rewards.\nStep 4: Click START MINING or toggle ⬡ MINE in nav. Mining icon turns green. A SHA-256 Blob Worker spawns in the background.\nStep 5: Mining auto-pauses when the browser tab is hidden. Resume by returning to the tab.\nStep 6: Mobile users: the system automatically caps CPU cycles at 3–5 seconds to prevent battery drain.\nStep 7: Block rewards are credited to your pubKey address in _DB.wallets. View in Ledger view.\nStep 8: Current epoch (2025–2028): 0.5 MIR per block. Next halving: 2028.',
+          tags: ['mining','pouw','epoch','rewards','setup'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'wf-005',
+          heading: 'Workflow E: OTC Trading',
+          body: 'Step 1: Connect and ensure sufficient MIR balance (check nav balance display).\nStep 2: Navigate to Market view (left sidebar ▸ Market).\nStep 3: TO SELL: Click SELL MIR → enter amount (min 0.1 MIR) → set price per MIR → confirm with keypair. Balance locks into cryptographic escrow immediately.\nStep 4: Your sell order appears in the public order book. Await buyer match.\nStep 5: TO BUY: Click BUY MIR → browse sell orders → agree price off-platform → complete payment → return and confirm payment with keypair signature.\nStep 6: On both signatures confirmed → escrow releases automatically. No gas fees.\nStep 7: AI-facilitated matching: 10% fee → Network Rewards Pool. Direct peer orders: 0% fee.\nStep 8: Dispute resolution: Admin terminal command "override otc_cancel <order_id>".',
+          tags: ['otc','trading','escrow','buy','sell'],
+          difficulty: 'intermediate',
+        },
+      ],
+    },
+    fa: {
+      title: 'گردش‌های کاری',
+      summary: 'راهنمای گام به گام برای عملیات اصلی پلتفرم.',
+      modules: [
+        {
+          id: 'wf-001',
+          heading: 'گردش کار الف: تحلیل اخبار (دریافت OSINT)',
+          body: 'گام ۱: احراز هویت کنید (AUTHENTICATE). خوراک‌های OSINT زنده ۱۵ ثانیه پس از بوت شروع می‌شوند.\nگام ۲: به نمای Feed بروید (نوار کناری ▸ Feed).\nگام ۳: آیتم‌های دارای نشان منبع (reuters_world و غیره) OSINT زنده هستند.\nگام ۴: روی "↗ Source" کلیک کنید تا مقاله اصلی باز شود.\nگام ۵: آیتم‌های CRITICAL/HIGH باعث Flash Alert می‌شوند.\nگام ۶: برای تحلیل عمیق‌تر — به نمای Scenarios بروید و سناریو با عنوان خبر بسازید.\nگام ۷: نمای Cognitive را بررسی کنید تا ببینید خبر چگونه وزن‌های geo/macro/cyber عوامل را به‌روز کرد.',
+          tags: ['osint','news','analysis'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'wf-002',
+          heading: 'گردش کار ب: تجسم داده (نمودار سیگنال ۶ بعدی)',
+          body: 'گام ۱: به نمای Cognitive / Agents بروید (نوار کناری ▸ Agents).\nگام ۲: هر عامل AI نشان می‌دهد: نمودار رادار ۶ بعدی، نمودار میله‌ای، ماتریس گرمایی تمایل.\nگام ۳: ابعاد: [۰] ژئوپلیتیک، [۱] اقتصادی، [۲] سایبری، [۳] تاریخی، [۴] اعتبار، [۵] فوریت.\nگام ۴: هر ۲ ثانیه به‌روز می‌شود.\nگام ۵: برای به‌روزرسانی دستی — "dream" را در ترمینال حاکمیتی اجرا کنید.\nگام ۶: برای اعداد خام — کنسول API ▸ _mirMeta ▸ getAgentWeights.',
+          tags: ['visualisation','charts','6d'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'wf-003',
+          heading: 'گردش کار ج: همکاری (Intel + مش CRDT)',
+          body: 'گام ۱: به نمای Feed بروید.\nگام ۲: SUBMIT INTEL ▸ عنوان، تحلیل، برچسب‌ها.\nگام ۳: آیتم شما فوری وارد _DB.feed می‌شود و از طریق مش broadcast می‌شود.\nگام ۴: رأی مثبت ▲: ۱ MIR (۰.۰۲ سوخته، ۰.۹۸ به نویسنده). FRS ۷۶–۱۰۰ = وزن ×۲.۰.\nگام ۵: CRDT تضمین می‌کند همه همتایان به حالت یکسان همگرا می‌شوند.',
+          tags: ['collaboration','intel','crdt'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'wf-004',
+          heading: 'گردش کار د: راه‌اندازی استخراج',
+          body: 'گام ۱: احراز هویت کنید.\nگام ۲: به داشبورد Mining بروید (نوار کناری ▸ Mining).\nگام ۳: START MINING یا ⬡ MINE در ناوبری.\nگام ۴: استخراج خودکار هنگام مخفی بودن تب متوقف می‌شود.\nگام ۵: دوره فعلی (۲۰۲۵–۲۰۲۸): ۰.۵ MIR در هر بلوک.',
+          tags: ['mining','pouw','setup'],
+          difficulty: 'beginner',
+        },
+        {
+          id: 'wf-005',
+          heading: 'گردش کار ه: معاملات OTC',
+          body: 'گام ۱: به نمای Market بروید (نوار کناری ▸ Market).\nگام ۲: SELL MIR: مقدار و قیمت ← تأیید با جفت کلید. موجودی فوری در امانت قفل می‌شود.\nگام ۳: BUY MIR: سفارش‌ها را مرور کنید ← پرداخت خارج از پلتفرم ← تأیید پرداخت.\nگام ۴: کارمزد مستقیم ۰٪. AI: ۱۰٪.',
+          tags: ['otc','trading','escrow'],
+          difficulty: 'intermediate',
+        },
+      ],
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CHAPTER 4: BILINGUAL GLOSSARY
+  // ═══════════════════════════════════════════════════════════════════════
+  glossary: {
+    en: {
+      title: 'Technical Glossary',
+      summary: 'Definitions of all technical terms used in the MIR Platform.',
+      modules: [
+        {
+          id: 'gl-001',
+          heading: 'A–C',
+          body: 'AES-256-GCM: Symmetric encryption standard used for key backup files. 256-bit key + 96-bit random IV + authentication tag.\nCRDT (Conflict-free Replicated Data Type): Data structure guaranteeing eventual consistency across distributed nodes without central coordination. MIR uses LWW-Register, G-Counter, PN-Counter, OR-Set, and MV-Register.\nCircuit Breaker: Resilience pattern that stops sending requests to a failing service after a threshold of failures, allowing recovery time.\nConsensus Probability: The weighted-average probability of a scenario, computed by 3 AI agents using FRS weights and 6D semantic matrices.',
+          tags: ['aes','crdt','circuit-breaker','consensus'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-002',
+          heading: 'D–G',
+          body: 'Dream State: Consolidation cycle where agent STM is merged into LTM, semantic weights are optimised, and state is committed to the CRDT ledger.\nED25519: Edwards-curve Digital Signature Algorithm. Produces 64-byte signatures. Used for all MIR identity operations.\nFRS (Forecaster Reputation Score): 0–100 score earned when predictions align with Admin Ground Truth resolutions. Scales upvote weight.\nGPU Pipeline: WebGPU compute passes (WGSL shaders) that run matrix operations for semantic weight tuning and scenario scoring.',
+          tags: ['dream','ed25519','frs','gpu'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-003',
+          heading: 'H–M',
+          body: 'HKDF (HMAC-based Key Derivation Function): Derives cryptographic keys from master key material.\nIdentity Partition: IDB namespace isolated per ED25519 pubKey. Switching keys switches data universe.\nLWW-Register (Last-Write-Wins Register): CRDT type where the highest-timestamp write wins. SOVEREIGN_PRIORITY=Infinity ensures Admin writes always win.\nMIRI: Smallest MIR unit. 1 MIR = 10^8 MIRI (analogous to Satoshi).',
+          tags: ['hkdf','idb','lww','miri'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'gl-004',
+          heading: 'O–P',
+          body: 'OSINT (Open Source Intelligence): Publicly available information used for geopolitical and macroeconomic analysis.\nOTC (Over-the-Counter): Peer-to-peer trading without a centralised exchange. MIR OTC uses cryptographic escrow.\nPBKDF2 (Password-Based Key Derivation Function 2): Derives encryption keys from passwords using 150,000 iterations of HMAC-SHA256.\nPoUW (Proof-of-Useful-Work): Mining mechanism that validates CRDT state logs and semantic metadata instead of wasteful hash puzzles.',
+          tags: ['osint','otc','pbkdf2','pouw'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-005',
+          heading: 'S–Z',
+          body: 'Semantic Weight Matrix (6D): Per-agent float vector [Geo, Econ, Cyber, Hist, Cred, Urgency] updated via EMA from OSINT signals and Dream State cycles.\nShadowban: Silent quality control. Automated-pattern accounts see 100% success but payloads are silently discarded by the mesh sync layer.\nSovereign Override: Admin-signed payload that preempts all autonomous logic. SOVEREIGN_PRIORITY=Infinity in all CRDT merges.\nSTM/LTM: Short-Term Memory (sessionStorage) / Long-Term Memory (IndexedDB) for agent context.\nVector Clock: CRDT mechanism for tracking causal ordering of events across distributed nodes.',
+          tags: ['semantic','shadowban','sovereign','stm','vector-clock'],
+          difficulty: 'advanced',
+        },
+      ],
+    },
+    fa: {
+      title: 'واژه‌نامه فنی',
+      summary: 'تعریف تمام اصطلاحات فنی پلتفرم MIR به فارسی و انگلیسی.',
+      modules: [
+        {
+          id: 'gl-001',
+          heading: 'الف تا ث',
+          body: 'AES-256-GCM: استاندارد رمزگذاری متقارن برای فایل‌های پشتیبان کلید. کلید ۲۵۶ بیتی + IV تصادفی ۹۶ بیتی.\nCRDT (نوع داده تکرارشونده بدون تعارض): ساختار داده‌ای که همگرایی نهایی در گره‌های توزیع‌شده را بدون هماهنگی مرکزی تضمین می‌کند.\nاحتمال اجماع: میانگین وزن‌دار احتمال سناریو که توسط ۳ عامل AI با استفاده از وزن‌های FRS و ماتریس‌های معنایی ۶ بعدی محاسبه می‌شود.',
+          tags: ['aes','crdt','consensus'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-002',
+          heading: 'ج تا ز',
+          body: 'حالت رویا (Dream State): چرخه تجمیع که در آن STM عامل با LTM ادغام می‌شود، وزن‌های معنایی بهینه می‌شوند.\nED25519: الگوریتم امضای دیجیتال منحنی Edwards. برای تمام عملیات هویت MIR استفاده می‌شود.\nFRS (امتیاز شهرت پیش‌بین): امتیاز ۰–۱۰۰ که با تطابق پیش‌بینی‌ها با حقیقت زمینه ادمین به دست می‌آید.\nGPU Pipeline: پاس‌های محاسباتی WebGPU برای تنظیم وزن‌های معنایی.',
+          tags: ['dream','ed25519','frs','gpu'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-003',
+          heading: 'ز تا م',
+          body: 'HKDF: تابع اشتقاق کلید مبتنی بر HMAC.\nپارتیشن هویت: فضای نام IDB ایزوله به ازای هر کلید عمومی ED25519.\nLWW-Register: نوع CRDT که آخرین نوشتن با بالاترین timestamp برنده می‌شود. SOVEREIGN_PRIORITY=Infinity اطمینان می‌دهد نوشتن ادمین همیشه برنده است.\nMIRI: کوچکترین واحد MIR. ۱ MIR = ۱۰^۸ MIRI.',
+          tags: ['hkdf','lww','miri'],
+          difficulty: 'advanced',
+        },
+        {
+          id: 'gl-004',
+          heading: 'م تا ص',
+          body: 'OSINT: اطلاعات منبع باز، اطلاعات در دسترس عموم برای تحلیل ژئوپلیتیک.\nOTC: معاملات همتا به همتا بدون صرافی مرکزی.\nPBKDF2: اشتقاق کلید رمزگذاری از رمزهای عبور با ۱۵۰,۰۰۰ تکرار.\nPoUW (اثبات کار مفید): مکانیزم استخراج که لاگ‌های CRDT را تأیید می‌کند.',
+          tags: ['osint','otc','pbkdf2','pouw'],
+          difficulty: 'intermediate',
+        },
+        {
+          id: 'gl-005',
+          heading: 'ص تا ی',
+          body: 'ماتریس وزن معنایی ۶ بعدی: بردار float به ازای هر عامل [ژئوپلیتیک، اقتصادی، سایبری، تاریخی، اعتبار، فوریت].\nShadowban: کنترل کیفیت ساکت — حساب‌های الگوی خودکار ۱۰۰٪ موفقیت می‌بینند اما payloadها بی‌صدا دور انداخته می‌شوند.\nOverride حاکمیتی: payload امضاشده توسط ادمین که تمام منطق خودمختار را نادیده می‌گیرد.\nSTM/LTM: حافظه کوتاه‌مدت (sessionStorage) / حافظه بلندمدت (IndexedDB).',
+          tags: ['semantic','shadowban','sovereign','stm'],
+          difficulty: 'advanced',
+        },
+      ],
+    },
+  },
 
 };
